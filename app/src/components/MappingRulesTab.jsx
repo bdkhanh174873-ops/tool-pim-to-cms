@@ -260,8 +260,6 @@ export default function MappingRulesTab({
               const isUsingPriority2 = currentAttr ? currentAttr.source === 'priority2_accepted' : false;
               const isUsingPriority1 = currentAttr ? currentAttr.source === 'priority1_accepted' : false;
               const isConfirmed = isUsingPriority1 || isUsingPriority2;
-              const isUsingPriority1 = currentAttr ? currentAttr.source === 'priority1_accepted' : false;
-              const isConfirmed = isUsingPriority1 || isUsingPriority2;
               const currentCode = isUsingPriority2 ? p2Code : p1Code;
 
               return (
@@ -644,6 +642,9 @@ export default function MappingRulesTab({
               const p1Code = disc.priority1.cmsPropertyId;
               const p2Code = disc.priority2.cmsPropertyId;
               const isUsingPriority2 = currentAttr ? currentAttr.source === 'priority2_accepted' : false;
+              const isUsingPriority1 = currentAttr ? currentAttr.source === 'priority1_accepted' : false;
+              const isConfirmed = isUsingPriority1 || isUsingPriority2;
+              const currentCode = isUsingPriority2 ? p2Code : p1Code;
 
               return (
                 <div key={idx} style={{
