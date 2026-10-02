@@ -1607,7 +1607,7 @@ export default function PreviewTraceTab({
                   onClick={handleQuickExportNewValues}
                   className="btn btn-gold"
                   style={{ fontSize: '0.82rem', padding: '8px 16px' }}
-                  title="Tải ngay file Excel import giá trị mới theo chuẩn file_mau_import_gia_tri_tren_cms.xlsx"
+                  title="Tải ngay file Excel import giá trị mới theo chuẩn import_gt_cms.xlsx"
                 >
                   <Sparkles size={14} />
                   <span>⚡ Tải File Import Giá Trị Mới ({proposals.length} mục)</span>

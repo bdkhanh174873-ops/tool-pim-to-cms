@@ -38,7 +38,7 @@ export function exportCMSImportExcel({
 
   const wb = XLSX.utils.book_new();
 
-  // 1. Sheet 1: Import CMS (Exactly matches import_5205 (1).xlsx)
+  // 1. Sheet 1: Import CMS (Exactly matches import_sp_cms.xlsx)
   const importSheetData = [
     ['PRODUCTID', 'PROPERTYID', 'PROPVALUEID', 'LANGUAGEID', 'USERNAME', 'FULLNAME', 'SITEID']
   ];
@@ -149,7 +149,7 @@ export function exportCMSImportExcel({
 }
 
 /**
- * Generates and downloads the CMS New Values Import Excel file according to file_mau_import_gia_tri_tren_cms.xlsx.
+ * Generates and downloads the CMS New Values Import Excel file according to import_gt_cms.xlsx.
  * Columns: Propertyid, Value, Displayorder, Issearch, Comparevalue, Isexistpro, Createduser
  */
 export function exportCMSNewValuesExcel({

@@ -253,7 +253,7 @@ export function importSettingsFromJSON(jsonString) {
 }
 
 /**
- * Merge mapping reference list (from file-mapping-cms-pim.xlsx) into attributeMappings and categoryMappings
+ * Merge mapping reference list (from thuoc_tinh_pim_cms.xlsx) into attributeMappings and categoryMappings
  */
 export function syncRulesFromMappingRef(mappingRefList = [], currentAttrs = [], currentCats = []) {
   if (!Array.isArray(mappingRefList) || mappingRefList.length === 0) {
@@ -372,7 +372,7 @@ export function syncRulesFromMappingRef(mappingRefList = [], currentAttrs = [], 
 }
 
 /**
- * Merge category mapping reference list (from ma_ho_tgdd_cms_pim.xlsx) into categoryMappings
+ * Merge category mapping reference list (from nganh_hang_pim_cms.xlsx) into categoryMappings
  */
 export function syncCategoriesFromRef(catRefList = [], currentCats = []) {
   if (!Array.isArray(catRefList) || catRefList.length === 0) {

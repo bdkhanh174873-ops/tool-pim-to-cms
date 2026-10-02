@@ -1,9 +1,9 @@
 /**
  * IndexedDB Service for storing Master/Reference Datasets:
- * 1. CMS Catalog (tt-adapter-cms.xlsx / file-thuoctinh-giatri.xlsx)
- * 2. PIM Options Dictionary (export_attribute_option.xlsx)
- * 3. PIM-CMS Mapping Reference (file-mapping-cms-pim.xlsx)
- * 4. CMS Import Template (import_5205.xlsx)
+ * 1. CMS Catalog (data_tt_gt_cms.xlsx / file-thuoctinh-giatri.xlsx)
+ * 2. PIM Options Dictionary (option_pim.xlsx)
+ * 3. PIM-CMS Mapping Reference (thuoc_tinh_pim_cms.xlsx)
+ * 4. CMS Import Template (import_sp_cms.xlsx)
  */
 
 const DB_NAME = 'PIM_CMS_DATA_STORE_V2';

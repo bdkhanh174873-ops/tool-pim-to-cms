@@ -282,13 +282,13 @@ export default function App() {
     setIsLoading(true);
     try {
       // 1. CMS Catalog
-      const resCms = await fetch('./samples/tt-adapter-cms.xlsx');
+      const resCms = await fetch('./samples/data_tt_gt_cms.xlsx');
       const bufCms = await resCms.arrayBuffer();
       const wbCms = await readExcelWorkbook(bufCms);
       const parsedCms = parseCMSCatalogFile(wbCms.Sheets[wbCms.SheetNames[0]]);
       const itemCms = {
         id: 'cmsCatalog',
-        fileName: 'tt-adapter-cms.xlsx',
+        fileName: 'data_tt_gt_cms.xlsx',
         updatedAt: new Date().toISOString(),
         summary: { categoriesCount: parsedCms.categories.length, propertiesCount: parsedCms.properties.size },
         parsedData: parsedCms,
@@ -297,13 +297,13 @@ export default function App() {
       await saveMasterDataset('cmsCatalog', itemCms);
 
       // 2. PIM Option
-      const resOpt = await fetch('./samples/export_attribute_option20260929134516.xlsx');
+      const resOpt = await fetch('./samples/option_pim.xlsx');
       const bufOpt = await resOpt.arrayBuffer();
       const wbOpt = await readExcelWorkbook(bufOpt);
       const parsedOpt = parsePIMOptionFile(wbOpt.Sheets[wbOpt.SheetNames[0]]);
       const itemOpt = {
         id: 'pimOption',
-        fileName: 'export_attribute_option20260929134516.xlsx',
+        fileName: 'option_pim.xlsx',
         updatedAt: new Date().toISOString(),
         summary: { totalOptions: parsedOpt.totalOptions },
         parsedData: parsedOpt,
@@ -312,13 +312,13 @@ export default function App() {
       await saveMasterDataset('pimOption', itemOpt);
 
       // 3. Mapping Ref
-      const resMap = await fetch('./samples/file-mapping-cms-pim.xlsx');
+      const resMap = await fetch('./samples/thuoc_tinh_pim_cms.xlsx');
       const bufMap = await resMap.arrayBuffer();
       const wbMap = await readExcelWorkbook(bufMap);
       const parsedMap = parseMappingReferenceFile(wbMap.Sheets[wbMap.SheetNames[0]]);
       const itemMap = {
         id: 'mappingRef',
-        fileName: 'file-mapping-cms-pim.xlsx',
+        fileName: 'thuoc_tinh_pim_cms.xlsx',
         updatedAt: new Date().toISOString(),
         summary: { count: parsedMap.length },
         parsedData: parsedMap,
@@ -327,13 +327,13 @@ export default function App() {
       await saveMasterDataset('mappingRef', itemMap);
 
       // 4. CMS Template
-      const resTpl = await fetch('./samples/import_5205 (1).xlsx');
+      const resTpl = await fetch('./samples/import_sp_cms.xlsx');
       const bufTpl = await resTpl.arrayBuffer();
       const wbTpl = await readExcelWorkbook(bufTpl);
       const parsedTpl = parseCMSImportTemplate(wbTpl);
       const itemTpl = {
         id: 'cmsTemplate',
-        fileName: 'import_5205 (1).xlsx',
+        fileName: 'import_sp_cms.xlsx',
         updatedAt: new Date().toISOString(),
         summary: { sheetName: parsedTpl.sheetName, headersCount: parsedTpl.headers.length },
         parsedData: parsedTpl,
@@ -341,16 +341,16 @@ export default function App() {
       };
       await saveMasterDataset('cmsTemplate', itemTpl);
 
-      // 5. Category Mapping Ref (ma_ho_tgdd_cms_pim.xlsx)
+      // 5. Category Mapping Ref (nganh_hang_pim_cms.xlsx)
       let itemCatMap = null;
       try {
-        const resCat = await fetch('./samples/ma_ho_tgdd_cms_pim.xlsx');
+        const resCat = await fetch('./samples/nganh_hang_pim_cms.xlsx');
         const bufCat = await resCat.arrayBuffer();
         const wbCat = await readExcelWorkbook(bufCat);
         const parsedCat = parseCategoryMappingReferenceFile(wbCat.Sheets[wbCat.SheetNames[0]]);
         itemCatMap = {
           id: 'catMappingRef',
-          fileName: 'ma_ho_tgdd_cms_pim.xlsx',
+          fileName: 'nganh_hang_pim_cms.xlsx',
           updatedAt: new Date().toISOString(),
           summary: { count: parsedCat.mappings.length },
           parsedData: parsedCat,
@@ -364,16 +364,16 @@ export default function App() {
         console.warn('Lỗi nạp file mapping ngành hàng mẫu:', catErr);
       }
 
-      // 6. CMS Value Import Template (file_mau_import_gia_tri_tren_cms.xlsx)
+      // 6. CMS Value Import Template (import_gt_cms.xlsx)
       let itemValTpl = null;
       try {
-        const resValTpl = await fetch('./samples/file_mau_import_gia_tri_tren_cms.xlsx');
+        const resValTpl = await fetch('./samples/import_gt_cms.xlsx');
         const bufValTpl = await resValTpl.arrayBuffer();
         const wbValTpl = await readExcelWorkbook(bufValTpl);
         const parsedValTpl = parseCMSValueImportTemplate(wbValTpl);
         itemValTpl = {
           id: 'cmsValueTemplate',
-          fileName: 'file_mau_import_gia_tri_tren_cms.xlsx',
+          fileName: 'import_gt_cms.xlsx',
           updatedAt: new Date().toISOString(),
           summary: {
             sheetName: parsedValTpl.sheetName,
@@ -590,13 +590,13 @@ export default function App() {
     setIsLoading(true);
     try {
       // 1. CMS Catalog
-      const resCms = await fetch('./samples/tt-adapter-cms.xlsx');
+      const resCms = await fetch('./samples/data_tt_gt_cms.xlsx');
       const bufCms = await resCms.arrayBuffer();
       const wbCms = await readExcelWorkbook(bufCms);
       const parsedCms = parseCMSCatalogFile(wbCms.Sheets[wbCms.SheetNames[0]]);
       const itemCms = {
         id: 'cmsCatalog',
-        fileName: 'tt-adapter-cms.xlsx',
+        fileName: 'data_tt_gt_cms.xlsx',
         updatedAt: new Date().toISOString(),
         summary: { categoriesCount: parsedCms.categories.length, propertiesCount: parsedCms.properties.size, totalRows: parsedCms.totalRows },
         parsedData: parsedCms,
@@ -605,13 +605,13 @@ export default function App() {
       await saveMasterDataset('cmsCatalog', itemCms);
 
       // 2. PIM Option
-      const resOpt = await fetch('./samples/export_attribute_option20260929134516.xlsx');
+      const resOpt = await fetch('./samples/option_pim.xlsx');
       const bufOpt = await resOpt.arrayBuffer();
       const wbOpt = await readExcelWorkbook(bufOpt);
       const parsedOpt = parsePIMOptionFile(wbOpt.Sheets[wbOpt.SheetNames[0]]);
       const itemOpt = {
         id: 'pimOption',
-        fileName: 'export_attribute_option20260929134516.xlsx',
+        fileName: 'option_pim.xlsx',
         updatedAt: new Date().toISOString(),
         summary: { totalOptions: parsedOpt.totalOptions },
         parsedData: parsedOpt,
@@ -620,13 +620,13 @@ export default function App() {
       await saveMasterDataset('pimOption', itemOpt);
 
       // 3. Mapping Ref
-      const resMap = await fetch('./samples/file-mapping-cms-pim.xlsx');
+      const resMap = await fetch('./samples/thuoc_tinh_pim_cms.xlsx');
       const bufMap = await resMap.arrayBuffer();
       const wbMap = await readExcelWorkbook(bufMap);
       const parsedMap = parseMappingReferenceFile(wbMap.Sheets[wbMap.SheetNames[0]]);
       const itemMap = {
         id: 'mappingRef',
-        fileName: 'file-mapping-cms-pim.xlsx',
+        fileName: 'thuoc_tinh_pim_cms.xlsx',
         updatedAt: new Date().toISOString(),
         summary: { count: parsedMap.length },
         parsedData: parsedMap,
@@ -640,13 +640,13 @@ export default function App() {
       setCategoryMappings(mergedCats);
 
       // 4. CMS Template
-      const resTpl = await fetch('./samples/import_5205 (1).xlsx');
+      const resTpl = await fetch('./samples/import_sp_cms.xlsx');
       const bufTpl = await resTpl.arrayBuffer();
       const wbTpl = await readExcelWorkbook(bufTpl);
       const parsedTpl = parseCMSImportTemplate(wbTpl);
       const itemTpl = {
         id: 'cmsTemplate',
-        fileName: 'import_5205 (1).xlsx',
+        fileName: 'import_sp_cms.xlsx',
         updatedAt: new Date().toISOString(),
         summary: { sheetName: parsedTpl.sheetName, headersCount: parsedTpl.headers.length, sampleRowsCount: parsedTpl.sampleRowsCount },
         parsedData: parsedTpl,
@@ -654,16 +654,16 @@ export default function App() {
       };
       await saveMasterDataset('cmsTemplate', itemTpl);
 
-      // 4b. CMS Value Import Template (file_mau_import_gia_tri_tren_cms.xlsx)
+      // 4b. CMS Value Import Template (import_gt_cms.xlsx)
       let itemValTpl = null;
       try {
-        const resValTpl = await fetch('./samples/file_mau_import_gia_tri_tren_cms.xlsx');
+        const resValTpl = await fetch('./samples/import_gt_cms.xlsx');
         const bufValTpl = await resValTpl.arrayBuffer();
         const wbValTpl = await readExcelWorkbook(bufValTpl);
         const parsedValTpl = parseCMSValueImportTemplate(wbValTpl);
         itemValTpl = {
           id: 'cmsValueTemplate',
-          fileName: 'file_mau_import_gia_tri_tren_cms.xlsx',
+          fileName: 'import_gt_cms.xlsx',
           updatedAt: new Date().toISOString(),
           summary: {
             sheetName: parsedValTpl.sheetName,

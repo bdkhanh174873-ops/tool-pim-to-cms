@@ -293,7 +293,7 @@ export default function ExportTab({
     }
   };
 
-  // Export File 2: Import giá trị mới CMS theo mẫu file_mau_import_gia_tri_tren_cms.xlsx
+  // Export File 2: Import giá trị mới CMS theo mẫu import_gt_cms.xlsx
   const handleExportNewValues = () => {
     const currentProposalsCount = effectiveProposals.length;
     if (currentProposalsCount === 0) {
@@ -1156,7 +1156,7 @@ export default function ExportTab({
                     File Tạo Mới Giá Trị Trên CMS
                   </h3>
                   <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '1px' }}>
-                    Cấu trúc 7 cột chuẩn: file_mau_import_gia_tri_tren_cms.xlsx
+                    Cấu trúc 7 cột chuẩn: import_gt_cms.xlsx
                   </div>
                 </div>
               </div>

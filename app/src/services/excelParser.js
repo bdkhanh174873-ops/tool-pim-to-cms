@@ -215,7 +215,7 @@ export function parsePIMProductFile(worksheet, fileName = '') {
 }
 
 /**
- * 2. Parser for PIM Option File (e.g. export_attribute_option.xlsx)
+ * 2. Parser for PIM Option File (e.g. option_pim.xlsx)
  * Key: (Code, OptionCode) -> OptionValue
  * Row 1: Code, Name, AttributeTypeName, AttributeGroupName, IsActivated, OptionCode, OptionValue, OptionSortOrder
  * Row 2: Tiếng Việt
@@ -271,7 +271,7 @@ export function parsePIMOptionFile(worksheet) {
 }
 
 /**
- * 3. Parser for CMS Attribute & Value Category File (e.g. tt-adapter-cms.xlsx or file-thuoctinh-giatri.xlsx)
+ * 3. Parser for CMS Attribute & Value Category File (e.g. data_tt_gt_cms.xlsx or file-thuoctinh-giatri.xlsx)
  * Required: CATEGORYID, CATEGORYNAME, PROPERTYID, PROPERTYNAME, VALUEID, VALUE
  * Optional: PROPERTYTYPE (0: text, 1: single, 2: multi), GROUPNAME, etc.
  */
@@ -363,7 +363,7 @@ export function parseCMSCatalogFile(worksheet) {
 }
 
 /**
- * 4. Parser for Attribute Mapping Reference File (e.g. file-mapping-cms-pim.xlsx)
+ * 4. Parser for Attribute Mapping Reference File (e.g. thuoc_tinh_pim_cms.xlsx)
  * Columns: 'MÃ NGÀNH HÀNG CMS', 'TÊN NGÀNH HÀNG CMS', 'MÃ THUỘC TÍNH TSKT', 'TÊN THUỘC TÍNH TSKT', 'MÃ THUỘC TÍNH PIM'
  */
 export function parseMappingReferenceFile(worksheet) {
@@ -403,7 +403,7 @@ export function parseMappingReferenceFile(worksheet) {
 }
 
 /**
- * 5. Parser for CMS Import Template File (e.g. import_5205 (1).xlsx)
+ * 5. Parser for CMS Import Template File (e.g. import_sp_cms.xlsx)
  * Extracts sheet name, headers, and column order.
  */
 export function parseCMSImportTemplate(workbook) {
@@ -440,7 +440,7 @@ export function parseCMSImportTemplate(workbook) {
 }
 
 /**
- * 5b. Parser for CMS Value Import Template File (e.g. file_mau_import_gia_tri_tren_cms.xlsx)
+ * 5b. Parser for CMS Value Import Template File (e.g. import_gt_cms.xlsx)
  * Columns: Propertyid, Value, Displayorder, Issearch, Comparevalue, Isexistpro, Createduser
  */
 export function parseCMSValueImportTemplate(workbook) {
@@ -712,7 +712,7 @@ export function exportDatasetToExcel(fileType, data, fileName) {
 }
 
 /**
- * 9. Parser for Category Mapping Reference File (e.g. ma_ho_tgdd_cms_pim.xlsx)
+ * 9. Parser for Category Mapping Reference File (e.g. nganh_hang_pim_cms.xlsx)
  * Header row: Mã PIM, NH chính, Tên Ngành hàng, image, ID NH CMS, MÃ HỌ SẢN PHẨM, TÊN HỌ SẢN PHẨM
  * Mã PIM: Mã danh mục PIM (category_code, e.g. 87)
  * ID NH CMS: ID Ngành hàng ở CMS (e.g. 9499)
