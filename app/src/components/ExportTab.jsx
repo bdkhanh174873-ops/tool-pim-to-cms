@@ -682,7 +682,7 @@ export default function ExportTab({
             />
             <div>
               <div style={{ fontSize: '0.88rem', fontWeight: 700, color: exportScope === 'whitelist' ? '#065f46' : '#1e293b' }}>
-                Phương án 2: Chỉ xuất với những ID này (Whitelist lọc ID)
+                Phương án 2: Xuất theo ID
               </div>
               <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '3px' }}>
                 Dán text hoặc nạp file Excel 1 cột ID. Hệ thống chỉ xuất dữ liệu thuộc các ID được cung cấp, loại bỏ toàn bộ các ID khác.

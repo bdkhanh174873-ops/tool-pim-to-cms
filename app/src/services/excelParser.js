@@ -132,6 +132,7 @@ export function parsePIMProductFile(worksheet, fileName = '') {
 
   const products = [];
   const originName = fileName || 'sp_pim.xlsx';
+  const seenProductKeys = new Set();
 
   for (let i = 2; i < rows.length; i++) {
     const row = rows[i];
@@ -144,6 +145,13 @@ export function parsePIMProductFile(worksheet, fileName = '') {
 
     // Bỏ qua dòng hoàn toàn trống (không có cả modelCode lẫn cmsProductId)
     if (!modelCode && !cmsProductId) continue;
+
+    // Lọc bỏ biến thể trùng lặp: chỉ giữ lại 1 dòng duy nhất cho mỗi ID CMS (hoặc Model PIM)
+    const productKey = (cmsProductId || modelCode).toLowerCase();
+    if (seenProductKeys.has(productKey)) {
+      continue;
+    }
+    seenProductKeys.add(productKey);
 
     const sku = skuColIndex !== -1 && row[skuColIndex] !== null && row[skuColIndex] !== undefined
       ? String(row[skuColIndex]).trim()
