@@ -133,6 +133,7 @@ export default function ExportTab({
         unmatchedIds: [],
         filteredValidRows: transformationResult?.validImportRows || [],
         filteredHoldRows: transformationResult?.holdRows || [],
+        filteredProposals: transformationResult?.proposals || [],
         targetIdSet: null,
         matchedProductsCount: 0
       };
