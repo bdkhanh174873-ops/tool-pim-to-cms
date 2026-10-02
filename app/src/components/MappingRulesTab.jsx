@@ -257,15 +257,12 @@ export default function MappingRulesTab({
               );
               const p1Code = disc.priority1.cmsPropertyId;
               const p2Code = disc.priority2.cmsPropertyId;
-              const isUsingPriority2 = currentAttr ? currentAttr.source === 'priority2_accepted' : false;
-              const isUsingPriority1 = currentAttr ? currentAttr.source === 'priority1_accepted' : false;
-              const isConfirmed = isUsingPriority1 || isUsingPriority2;
-              const currentCode = isUsingPriority2 ? p2Code : p1Code;
+              const isUsingP2 = currentAttr ? currentAttr.source === 'priority2_accepted' : false;
 
               return (
                 <div key={idx} style={{
-                  background: isUsingPriority2 ? '#f0fdf4' : '#f8fafc',
-                  border: isUsingPriority2 ? '1.5px solid #86efac' : '1.5px solid #bfdbfe',
+                  background: '#fffef5',
+                  border: '1.5px solid #fde68a',
                   padding: '12px 16px',
                   borderRadius: '10px',
                   display: 'flex',
@@ -273,11 +270,11 @@ export default function MappingRulesTab({
                   justifyContent: 'space-between',
                   gap: '16px',
                   flexWrap: 'wrap',
-                  boxShadow: isUsingPriority2 ? '0 1px 3px rgba(16,185,129,0.06)' : '0 1px 3px rgba(37,99,235,0.06)'
+                  boxShadow: '0 1px 3px rgba(217,119,6,0.06)'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>
-                      {disc.pimAttributeLabel || disc.priority1.cmsPropertyName}
+                      {disc.pimAttributeLabel || disc.pimAttributeCode}
                     </span>
                     <code style={{ color: '#2563eb', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', background: '#eff6ff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #dbeafe' }}>
                       {disc.pimAttributeCode}
@@ -285,134 +282,45 @@ export default function MappingRulesTab({
                     <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
                       • Ngành: <b style={{ color: '#334155' }}>{disc.cmsCategoryId} - {disc.cmsCategoryName}</b>
                     </span>
-                    
-                    {/* Active State Badge */}
-                    {!isConfirmed ? (
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '3px 9px',
-                        borderRadius: '6px',
-                        background: '#fef3c7',
-                        color: '#b45309',
-                        border: '1px solid #fde68a',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        <span style={{fontSize:'12px'}}>⚠️</span>
-                        <span>Chưa xác nhận (Đang bị tạm giữ)</span>
-                      </span>
-                    ) : isUsingPriority2 ? (
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '3px 9px',
-                        borderRadius: '6px',
-                        background: '#d1fae5',
-                        color: '#065f46',
-                        border: '1px solid #a7f3d0',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        <Check size={12} strokeWidth={3} />
-                        <span>Đang áp dụng: <b>Ưu tiên 2 (CMS: {p2Code})</b></span>
-                      </span>
-                    ) : (
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '3px 9px',
-                        borderRadius: '6px',
-                        background: '#eff6ff',
-                        color: '#1d4ed8',
-                        border: '1px solid #bfdbfe',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        <Check size={12} strokeWidth={3} />
-                        <span>Đang áp dụng: <b>Ưu tiên 1 (File: {p1Code})</b></span>
-                      </span>
-                    )}
+                    {/* Badge trạng thái */}
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: 700, padding: '3px 9px', borderRadius: '6px',
+                      background: isUsingP2 ? '#d1fae5' : '#dbeafe',
+                      color: isUsingP2 ? '#065f46' : '#1d4ed8',
+                      border: `1px solid ${isUsingP2 ? '#a7f3d0' : '#93c5fd'}`,
+                      display: 'inline-flex', alignItems: 'center', gap: '4px'
+                    }}>
+                      <Check size={12} strokeWidth={3} />
+                      <span>Đang dùng: <b>{isUsingP2 ? `P2 (${p2Code})` : `P1 (${p1Code})`}</b></span>
+                    </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    {/* Priority 1 Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleSelectDiscrepancyCode(disc, p1Code, false)}
+                    <button type="button" onClick={() => handleSelectDiscrepancyCode(disc, p1Code, false)}
                       style={{
-                        fontSize: '0.76rem',
-                        padding: '6px 14px',
-                        borderRadius: '7px',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        transition: 'all 0.15s ease',
-                        ...(isUsingPriority1 ? {
-                          background: '#2563eb',
-                          color: '#ffffff',
-                          border: '1px solid #1d4ed8',
-                          boxShadow: '0 2px 4px rgba(37,99,235,0.3)',
-                          fontWeight: 700
+                        fontSize: '0.76rem', padding: '6px 14px', borderRadius: '7px', cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', gap: '5px', transition: 'all 0.15s ease',
+                        ...(!isUsingP2 ? {
+                          background: '#2563eb', color: '#fff', border: '1px solid #1d4ed8', fontWeight: 700,
+                          boxShadow: '0 2px 4px rgba(37,99,235,0.3)'
                         } : {
-                          background: '#ffffff',
-                          color: '#1e40af',
-                          border: '1.5px dashed #93c5fd',
-                          fontWeight: 600
+                          background: '#fff', color: '#1e40af', border: '1.5px dashed #93c5fd', fontWeight: 600
                         })
-                      }}
-                      title={isUsingPriority1 ? 'Đang áp dụng theo File tham chiếu (Ưu tiên 1)' : 'Chuyển sang áp dụng theo File tham chiếu (Ưu tiên 1)'}
-                    >
-                      {isUsingPriority1 ? (
-                        <>
-                          <Check size={13} strokeWidth={3} />
-                          <span>✔ Đã chọn: Ưu tiên 1 (File: {p1Code})</span>
-                        </>
-                      ) : (
-                        <span>📁 Chọn Ưu tiên 1 (File: {p1Code})</span>
-                      )}
+                      }}>
+                      {!isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>✔ P1: {p1Code}</span></> : <span>📁 Chọn P1: {p1Code}</span>}
                     </button>
-
-                    {/* Priority 2 Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleSelectDiscrepancyCode(disc, p2Code, true)}
+                    <button type="button" onClick={() => handleSelectDiscrepancyCode(disc, p2Code, true)}
                       style={{
-                        fontSize: '0.76rem',
-                        padding: '6px 14px',
-                        borderRadius: '7px',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        transition: 'all 0.15s ease',
-                        ...(isUsingPriority2 ? {
-                          background: '#059669',
-                          color: '#ffffff',
-                          border: '1px solid #047857',
-                          boxShadow: '0 2px 4px rgba(5,150,105,0.3)',
-                          fontWeight: 700
+                        fontSize: '0.76rem', padding: '6px 14px', borderRadius: '7px', cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', gap: '5px', transition: 'all 0.15s ease',
+                        ...(isUsingP2 ? {
+                          background: '#059669', color: '#fff', border: '1px solid #047857', fontWeight: 700,
+                          boxShadow: '0 2px 4px rgba(5,150,105,0.3)'
                         } : {
-                          background: '#ffffff',
-                          color: '#065f46',
-                          border: '1.5px dashed #86efac',
-                          fontWeight: 600
+                          background: '#fff', color: '#065f46', border: '1.5px dashed #86efac', fontWeight: 600
                         })
-                      }}
-                      title={isUsingPriority2 ? 'Đang áp dụng theo CMS thông minh (Ưu tiên 2)' : 'Chuyển sang áp dụng theo CMS thông minh (Ưu tiên 2)'}
-                    >
-                      {isUsingPriority2 ? (
-                        <>
-                          <Check size={13} strokeWidth={3} />
-                          <span>✔ Đã chọn: Ưu tiên 2 (CMS: {p2Code})</span>
-                        </>
-                      ) : (
-                        <span>⚡ Chọn Ưu tiên 2 (CMS: {p2Code})</span>
-                      )}
+                      }}>
+                      {isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>✔ P2: {p2Code}</span></> : <span>⚡ Chọn P2: {p2Code}</span>}
                     </button>
                   </div>
                 </div>
@@ -641,15 +549,12 @@ export default function MappingRulesTab({
               );
               const p1Code = disc.priority1.cmsPropertyId;
               const p2Code = disc.priority2.cmsPropertyId;
-              const isUsingPriority2 = currentAttr ? currentAttr.source === 'priority2_accepted' : false;
-              const isUsingPriority1 = currentAttr ? currentAttr.source === 'priority1_accepted' : false;
-              const isConfirmed = isUsingPriority1 || isUsingPriority2;
-              const currentCode = isUsingPriority2 ? p2Code : p1Code;
+              const isUsingP2 = currentAttr ? currentAttr.source === 'priority2_accepted' : false;
 
               return (
                 <div key={idx} style={{
-                  background: isUsingPriority2 ? '#f0fdf4' : '#f8fafc',
-                  border: isUsingPriority2 ? '1.5px solid #86efac' : '1.5px solid #bfdbfe',
+                  background: '#fffef5',
+                  border: '1.5px solid #fde68a',
                   padding: '12px 16px',
                   borderRadius: '10px',
                   display: 'flex',
@@ -657,11 +562,11 @@ export default function MappingRulesTab({
                   justifyContent: 'space-between',
                   gap: '16px',
                   flexWrap: 'wrap',
-                  boxShadow: isUsingPriority2 ? '0 1px 3px rgba(16,185,129,0.06)' : '0 1px 3px rgba(37,99,235,0.06)'
+                  boxShadow: '0 1px 3px rgba(217,119,6,0.06)'
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                     <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>
-                      {disc.pimAttributeLabel || disc.priority1.cmsPropertyName}
+                      {disc.pimAttributeLabel || disc.pimAttributeCode}
                     </span>
                     <code style={{ color: '#2563eb', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', background: '#eff6ff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #dbeafe' }}>
                       {disc.pimAttributeCode}
@@ -669,134 +574,45 @@ export default function MappingRulesTab({
                     <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
                       • Ngành: <b style={{ color: '#334155' }}>{disc.cmsCategoryId} - {disc.cmsCategoryName}</b>
                     </span>
-
-                    {/* Active State Badge */}
-                    {!isConfirmed ? (
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '3px 9px',
-                        borderRadius: '6px',
-                        background: '#fef3c7',
-                        color: '#b45309',
-                        border: '1px solid #fde68a',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        <span style={{fontSize:'12px'}}>⚠️</span>
-                        <span>Chưa xác nhận (Đang bị tạm giữ)</span>
-                      </span>
-                    ) : isUsingPriority2 ? (
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '3px 9px',
-                        borderRadius: '6px',
-                        background: '#d1fae5',
-                        color: '#065f46',
-                        border: '1px solid #a7f3d0',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        <Check size={12} strokeWidth={3} />
-                        <span>Đang dùng: <b>Ưu tiên 2 (CMS: {p2Code})</b></span>
-                      </span>
-                    ) : (
-                      <span style={{
-                        fontSize: '0.72rem',
-                        fontWeight: 700,
-                        padding: '3px 9px',
-                        borderRadius: '6px',
-                        background: '#eff6ff',
-                        color: '#1d4ed8',
-                        border: '1px solid #bfdbfe',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px'
-                      }}>
-                        <Check size={12} strokeWidth={3} />
-                        <span>Đang dùng: <b>Ưu tiên 1 (File: {p1Code})</b></span>
-                      </span>
-                    )}
+                    {/* Badge trạng thái */}
+                    <span style={{
+                      fontSize: '0.72rem', fontWeight: 700, padding: '3px 9px', borderRadius: '6px',
+                      background: isUsingP2 ? '#d1fae5' : '#dbeafe',
+                      color: isUsingP2 ? '#065f46' : '#1d4ed8',
+                      border: `1px solid ${isUsingP2 ? '#a7f3d0' : '#93c5fd'}`,
+                      display: 'inline-flex', alignItems: 'center', gap: '4px'
+                    }}>
+                      <Check size={12} strokeWidth={3} />
+                      <span>Đang dùng: <b>{isUsingP2 ? `P2 (${p2Code})` : `P1 (${p1Code})`}</b></span>
+                    </span>
                   </div>
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    {/* Priority 1 Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleSelectDiscrepancyCode(disc, p1Code, false)}
+                    <button type="button" onClick={() => handleSelectDiscrepancyCode(disc, p1Code, false)}
                       style={{
-                        fontSize: '0.76rem',
-                        padding: '6px 14px',
-                        borderRadius: '7px',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        transition: 'all 0.15s ease',
-                        ...(isUsingPriority1 ? {
-                          background: '#2563eb',
-                          color: '#ffffff',
-                          border: '1px solid #1d4ed8',
-                          boxShadow: '0 2px 4px rgba(37,99,235,0.3)',
-                          fontWeight: 700
+                        fontSize: '0.76rem', padding: '6px 14px', borderRadius: '7px', cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', gap: '5px', transition: 'all 0.15s ease',
+                        ...(!isUsingP2 ? {
+                          background: '#2563eb', color: '#fff', border: '1px solid #1d4ed8', fontWeight: 700,
+                          boxShadow: '0 2px 4px rgba(37,99,235,0.3)'
                         } : {
-                          background: '#ffffff',
-                          color: '#1e40af',
-                          border: '1.5px dashed #93c5fd',
-                          fontWeight: 600
+                          background: '#fff', color: '#1e40af', border: '1.5px dashed #93c5fd', fontWeight: 600
                         })
-                      }}
-                      title={isUsingPriority1 ? 'Đang áp dụng theo File tham chiếu (Ưu tiên 1)' : 'Chuyển sang áp dụng theo File tham chiếu (Ưu tiên 1)'}
-                    >
-                      {isUsingPriority1 ? (
-                        <>
-                          <Check size={13} strokeWidth={3} />
-                          <span>✔ Đã chọn: Ưu tiên 1 (File: {p1Code})</span>
-                        </>
-                      ) : (
-                        <span>📁 Chọn Ưu tiên 1 (File: {p1Code})</span>
-                      )}
+                      }}>
+                      {!isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>✔ P1: {p1Code}</span></> : <span>📁 Chọn P1: {p1Code}</span>}
                     </button>
-
-                    {/* Priority 2 Button */}
-                    <button
-                      type="button"
-                      onClick={() => handleSelectDiscrepancyCode(disc, p2Code, true)}
+                    <button type="button" onClick={() => handleSelectDiscrepancyCode(disc, p2Code, true)}
                       style={{
-                        fontSize: '0.76rem',
-                        padding: '6px 14px',
-                        borderRadius: '7px',
-                        cursor: 'pointer',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '5px',
-                        transition: 'all 0.15s ease',
-                        ...(isUsingPriority2 ? {
-                          background: '#059669',
-                          color: '#ffffff',
-                          border: '1px solid #047857',
-                          boxShadow: '0 2px 4px rgba(5,150,105,0.3)',
-                          fontWeight: 700
+                        fontSize: '0.76rem', padding: '6px 14px', borderRadius: '7px', cursor: 'pointer',
+                        display: 'inline-flex', alignItems: 'center', gap: '5px', transition: 'all 0.15s ease',
+                        ...(isUsingP2 ? {
+                          background: '#059669', color: '#fff', border: '1px solid #047857', fontWeight: 700,
+                          boxShadow: '0 2px 4px rgba(5,150,105,0.3)'
                         } : {
-                          background: '#ffffff',
-                          color: '#065f46',
-                          border: '1.5px dashed #86efac',
-                          fontWeight: 600
+                          background: '#fff', color: '#065f46', border: '1.5px dashed #86efac', fontWeight: 600
                         })
-                      }}
-                      title={isUsingPriority2 ? 'Đang áp dụng theo CMS thông minh (Ưu tiên 2)' : 'Chuyển sang áp dụng theo CMS thông minh (Ưu tiên 2)'}
-                    >
-                      {isUsingPriority2 ? (
-                        <>
-                          <Check size={13} strokeWidth={3} />
-                          <span>✔ Đã chọn: Ưu tiên 2 (CMS: {p2Code})</span>
-                        </>
-                      ) : (
-                        <span>⚡ Chọn Ưu tiên 2 (CMS: {p2Code})</span>
-                      )}
+                      }}>
+                      {isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>✔ P2: {p2Code}</span></> : <span>⚡ Chọn P2: {p2Code}</span>}
                     </button>
                   </div>
                 </div>
