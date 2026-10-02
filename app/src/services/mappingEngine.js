@@ -165,16 +165,7 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
   if (normLabel && normLabel.length >= 3) {
     for (const p of catProps) {
       const pNorm = normalizeText(p.propertyName);
-      
-      // Chặn các false-positives phổ biến:
-      // "kết nối" bị map nhầm vào "khoảng cách kết nối"
-      const isKetNoi = (s) => s === 'ket noi' || s === 'cach ket noi' || s === 'chuan ket noi';
-      if ((isKetNoi(normLabel) && pNorm.includes('khoang cach')) || (isKetNoi(pNorm) && normLabel.includes('khoang cach'))) continue;
-      // "cáp" bị map nhầm vào "cáp sạc" hoặc ngược lại nếu không cẩn thận
-      
       if (pNorm.includes(normLabel) || normLabel.includes(pNorm)) {
-        // Đảm bảo không map lệch nghĩa quá xa (chỉ chấp nhận nếu tỷ lệ chiều dài không quá chênh lệch)
-        // hoặc các trường hợp đã bị lọc ở trên
         return determineSmartMode(p, normCode);
       }
     }
@@ -354,7 +345,34 @@ export function runMappingTransformation({
       const p1Rule = attrMap.get(attrRuleKey);
 
       // ƯU TIÊN 2: Smart Auto-Mapping from current CMS Catalog
-      const p2Match = smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, cmsCatalog);
+      let p2Match = smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, cmsCatalog);
+
+      // KIỂM TRA XUNG ĐỘT: Nếu Ưu tiên 2 đề xuất 1 cmsPropertyId mà đã có cột PIM KHÁC
+      // chiếm dụng qua Ưu tiên 1 rồi → vô hiệu hóa Ưu tiên 2 để tránh map nhầm.
+      // Ví dụ: wireless_connection → Smart map gợi ý 8853 (Khoảng cách kết nối),
+      // nhưng 8853 đã bị cable_lengthconnection_distance chiếm qua file mapping rồi → bỏ qua.
+      if (p2Match) {
+        const p2PropId = String(p2Match.propertyId).trim();
+        // Kiểm tra xem có mapping nào khác trong file đã chiếm cmsPropertyId này chưa
+        let isP2PropertyClaimedByAnotherP1 = false;
+        for (const [key, rule] of attrMap.entries()) {
+          if (key.startsWith(`${cmsCategoryId}___`)) {
+            // Bỏ qua chính mapping của cột PIM hiện tại (nếu có)
+            const keyPimCode = key.split('___')[1];
+            if (keyPimCode === pimAttrCode.toLowerCase()) continue;
+
+            const rulePropertyId = String(rule.originalP1Id || rule.cmsPropertyId).trim();
+            if (rulePropertyId === p2PropId) {
+              // Property ID này đã được map trong file cho 1 cột PIM khác → chặn
+              isP2PropertyClaimedByAnotherP1 = true;
+              break;
+            }
+          }
+        }
+        if (isP2PropertyClaimedByAnotherP1) {
+          p2Match = null; // Vô hiệu hóa Smart Map cho trường hợp này
+        }
+      }
 
       let effectiveRule = null;
       let usedSource = 'none';
