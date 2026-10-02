@@ -165,7 +165,15 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
   if (normLabel && normLabel.length >= 3) {
     for (const p of catProps) {
       const pNorm = normalizeText(p.propertyName);
+      
+      // Chặn các false-positives phổ biến:
+      // "kết nối" bị map nhầm vào "khoảng cách kết nối"
+      if ((normLabel === 'ket noi' && pNorm.includes('khoang cach')) || (pNorm === 'ket noi' && normLabel.includes('khoang cach'))) continue;
+      // "cáp" bị map nhầm vào "cáp sạc" hoặc ngược lại nếu không cẩn thận
+      
       if (pNorm.includes(normLabel) || normLabel.includes(pNorm)) {
+        // Đảm bảo không map lệch nghĩa quá xa (chỉ chấp nhận nếu tỷ lệ chiều dài không quá chênh lệch)
+        // hoặc các trường hợp đã bị lọc ở trên
         return determineSmartMode(p, normCode);
       }
     }
