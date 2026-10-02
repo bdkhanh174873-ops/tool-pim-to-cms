@@ -258,6 +258,10 @@ export default function MappingRulesTab({
               const p1Code = disc.priority1.cmsPropertyId;
               const p2Code = disc.priority2.cmsPropertyId;
               const isUsingPriority2 = currentAttr ? currentAttr.source === 'priority2_accepted' : false;
+              const isUsingPriority1 = currentAttr ? currentAttr.source === 'priority1_accepted' : false;
+              const isConfirmed = isUsingPriority1 || isUsingPriority2;
+              const isUsingPriority1 = currentAttr ? currentAttr.source === 'priority1_accepted' : false;
+              const isConfirmed = isUsingPriority1 || isUsingPriority2;
               const currentCode = isUsingPriority2 ? p2Code : p1Code;
 
               return (
@@ -285,7 +289,23 @@ export default function MappingRulesTab({
                     </span>
                     
                     {/* Active State Badge */}
-                    {isUsingPriority2 ? (
+                    {!isConfirmed ? (
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        padding: '3px 9px',
+                        borderRadius: '6px',
+                        background: '#fef3c7',
+                        color: '#b45309',
+                        border: '1px solid #fde68a',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <span style={{fontSize:'12px'}}>⚠️</span>
+                        <span>Chưa xác nhận (Đang bị tạm giữ)</span>
+                      </span>
+                    ) : isUsingPriority2 ? (
                       <span style={{
                         fontSize: '0.72rem',
                         fontWeight: 700,
@@ -334,7 +354,7 @@ export default function MappingRulesTab({
                         alignItems: 'center',
                         gap: '5px',
                         transition: 'all 0.15s ease',
-                        ...(!isUsingPriority2 ? {
+                        ...(isUsingPriority1 ? {
                           background: '#2563eb',
                           color: '#ffffff',
                           border: '1px solid #1d4ed8',
@@ -347,15 +367,15 @@ export default function MappingRulesTab({
                           fontWeight: 600
                         })
                       }}
-                      title={!isUsingPriority2 ? 'Đang áp dụng theo File tham chiếu (Ưu tiên 1)' : 'Chuyển sang áp dụng theo File tham chiếu (Ưu tiên 1)'}
+                      title={isUsingPriority1 ? 'Đang áp dụng theo File tham chiếu (Ưu tiên 1)' : 'Chuyển sang áp dụng theo File tham chiếu (Ưu tiên 1)'}
                     >
-                      {!isUsingPriority2 ? (
+                      {isUsingPriority1 ? (
                         <>
                           <Check size={13} strokeWidth={3} />
-                          <span>✔ Đang chọn: Ưu tiên 1 (File: {p1Code})</span>
+                          <span>✔ Đã chọn: Ưu tiên 1 (File: {p1Code})</span>
                         </>
                       ) : (
-                        <span>📁 Chuyển sang Ưu tiên 1 (File: {p1Code})</span>
+                        <span>📁 Chọn Ưu tiên 1 (File: {p1Code})</span>
                       )}
                     </button>
 
@@ -390,10 +410,10 @@ export default function MappingRulesTab({
                       {isUsingPriority2 ? (
                         <>
                           <Check size={13} strokeWidth={3} />
-                          <span>✔ Đang chọn: Ưu tiên 2 (CMS: {p2Code})</span>
+                          <span>✔ Đã chọn: Ưu tiên 2 (CMS: {p2Code})</span>
                         </>
                       ) : (
-                        <span>⚡ Chuyển sang Ưu tiên 2 (CMS: {p2Code})</span>
+                        <span>⚡ Chọn Ưu tiên 2 (CMS: {p2Code})</span>
                       )}
                     </button>
                   </div>
@@ -650,7 +670,23 @@ export default function MappingRulesTab({
                     </span>
 
                     {/* Active State Badge */}
-                    {isUsingPriority2 ? (
+                    {!isConfirmed ? (
+                      <span style={{
+                        fontSize: '0.72rem',
+                        fontWeight: 700,
+                        padding: '3px 9px',
+                        borderRadius: '6px',
+                        background: '#fef3c7',
+                        color: '#b45309',
+                        border: '1px solid #fde68a',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px'
+                      }}>
+                        <span style={{fontSize:'12px'}}>⚠️</span>
+                        <span>Chưa xác nhận (Đang bị tạm giữ)</span>
+                      </span>
+                    ) : isUsingPriority2 ? (
                       <span style={{
                         fontSize: '0.72rem',
                         fontWeight: 700,
@@ -699,7 +735,7 @@ export default function MappingRulesTab({
                         alignItems: 'center',
                         gap: '5px',
                         transition: 'all 0.15s ease',
-                        ...(!isUsingPriority2 ? {
+                        ...(isUsingPriority1 ? {
                           background: '#2563eb',
                           color: '#ffffff',
                           border: '1px solid #1d4ed8',
@@ -712,15 +748,15 @@ export default function MappingRulesTab({
                           fontWeight: 600
                         })
                       }}
-                      title={!isUsingPriority2 ? 'Đang áp dụng theo File tham chiếu (Ưu tiên 1)' : 'Chuyển sang áp dụng theo File tham chiếu (Ưu tiên 1)'}
+                      title={isUsingPriority1 ? 'Đang áp dụng theo File tham chiếu (Ưu tiên 1)' : 'Chuyển sang áp dụng theo File tham chiếu (Ưu tiên 1)'}
                     >
-                      {!isUsingPriority2 ? (
+                      {isUsingPriority1 ? (
                         <>
                           <Check size={13} strokeWidth={3} />
-                          <span>✔ Đang chọn: Ưu tiên 1 (File: {p1Code})</span>
+                          <span>✔ Đã chọn: Ưu tiên 1 (File: {p1Code})</span>
                         </>
                       ) : (
-                        <span>📁 Chuyển sang Ưu tiên 1 (File: {p1Code})</span>
+                        <span>📁 Chọn Ưu tiên 1 (File: {p1Code})</span>
                       )}
                     </button>
 
@@ -755,10 +791,10 @@ export default function MappingRulesTab({
                       {isUsingPriority2 ? (
                         <>
                           <Check size={13} strokeWidth={3} />
-                          <span>✔ Đang chọn: Ưu tiên 2 (CMS: {p2Code})</span>
+                          <span>✔ Đã chọn: Ưu tiên 2 (CMS: {p2Code})</span>
                         </>
                       ) : (
-                        <span>⚡ Chuyển sang Ưu tiên 2 (CMS: {p2Code})</span>
+                        <span>⚡ Chọn Ưu tiên 2 (CMS: {p2Code})</span>
                       )}
                     </button>
                   </div>
