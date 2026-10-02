@@ -131,14 +131,13 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
     }
   }
 
-  // 2. Synonyms match
+  // 2. Synonyms - EXACT match
   if (normLabel) {
     for (const syn of SMART_SYNONYMS) {
       if (normLabel === syn.pim || normLabel.includes(syn.pim)) {
         for (const targetName of syn.cms) {
           for (const p of catProps) {
-            const pNorm = normalizeText(p.propertyName);
-            if (pNorm === targetName || pNorm.includes(targetName)) {
+            if (normalizeText(p.propertyName) === targetName) {
               return determineSmartMode(p, normCode);
             }
           }
@@ -147,13 +146,12 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
     }
   }
 
-  // 3. Technical code keywords match
+  // 3. Technical code keywords - EXACT match
   for (const kw of SMART_CODE_KEYWORDS) {
     if (normCode.includes(kw.code)) {
       for (const targetName of kw.names) {
         for (const p of catProps) {
-          const pNorm = normalizeText(p.propertyName);
-          if (pNorm === targetName || pNorm.includes(targetName)) {
+          if (normalizeText(p.propertyName) === targetName) {
             return determineSmartMode(p, normCode);
           }
         }
@@ -161,7 +159,35 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
     }
   }
 
-  // 4. Substring inclusion match (if label >= 3 chars)
+  // 4. Synonyms - PARTIAL match
+  if (normLabel) {
+    for (const syn of SMART_SYNONYMS) {
+      if (normLabel === syn.pim || normLabel.includes(syn.pim)) {
+        for (const targetName of syn.cms) {
+          for (const p of catProps) {
+            if (normalizeText(p.propertyName).includes(targetName)) {
+              return determineSmartMode(p, normCode);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // 5. Technical code keywords - PARTIAL match
+  for (const kw of SMART_CODE_KEYWORDS) {
+    if (normCode.includes(kw.code)) {
+      for (const targetName of kw.names) {
+        for (const p of catProps) {
+          if (normalizeText(p.propertyName).includes(targetName)) {
+            return determineSmartMode(p, normCode);
+          }
+        }
+      }
+    }
+  }
+
+  // 6. Substring inclusion match (if label >= 3 chars)
   if (normLabel && normLabel.length >= 3) {
     for (const p of catProps) {
       const pNorm = normalizeText(p.propertyName);
