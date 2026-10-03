@@ -112,9 +112,16 @@ export default function App() {
 
         if (!stored.cmsCatalog || !stored.pimOption || !stored.cmsTemplate || !stored.catMappingRef || !stored.cmsValueTemplate || isOutdated) {
           loadSampleMasterData();
-        } else if (stored.catMappingRef?.parsedData?.mappings) {
-          const merged = syncCategoriesFromRef(stored.catMappingRef.parsedData.mappings, categoryMappings);
-          setCategoryMappings(merged);
+        } else {
+          if (stored.catMappingRef?.parsedData?.mappings) {
+            const merged = syncCategoriesFromRef(stored.catMappingRef.parsedData.mappings, categoryMappings);
+            setCategoryMappings(merged);
+          }
+          if (stored.mappingRef?.parsedData) {
+            const { mergedAttrs, mergedCats } = syncRulesFromMappingRef(stored.mappingRef.parsedData, attributeMappings, categoryMappings);
+            setAttributeMappings(mergedAttrs);
+            if (mergedCats.length > categoryMappings.length) setCategoryMappings(mergedCats);
+          }
         }
       } catch (err) {
         console.error('Failed to load master data from IndexedDB:', err);
@@ -144,6 +151,7 @@ export default function App() {
       cmsCatalog: masterFiles.cmsCatalog.parsedData,
       categoryMappings,
       attributeMappings,
+      mappingRef: masterFiles.mappingRef?.parsedData,
       userConfig
     });
 
@@ -325,6 +333,10 @@ export default function App() {
         rawBuffer: bufMap
       };
       await saveMasterDataset('mappingRef', itemMap);
+      // Tự động đồng bộ toàn bộ quy tắc thuộc tính từ file tham chiếu
+      const { mergedAttrs, mergedCats } = syncRulesFromMappingRef(parsedMap, attributeMappings, categoryMappings);
+      setAttributeMappings(mergedAttrs);
+      if (mergedCats.length > categoryMappings.length) setCategoryMappings(mergedCats);
 
       // 4. CMS Template
       const resTpl = await fetch('./samples/import_sp_cms.xlsx');

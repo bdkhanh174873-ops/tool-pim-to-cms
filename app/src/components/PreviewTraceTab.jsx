@@ -514,16 +514,11 @@ export default function PreviewTraceTab({
             gap: '12px'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
-                <ShieldAlert size={18} />
+              <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
+                <ShieldAlert size={16} />
               </div>
-              <div>
-                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#92400e' }}>
-                  Phát hiện {transformationResult.discrepancies.length} thuộc tính có sự chênh lệch mã giữa File tham chiếu (Ưu tiên 1) và CMS thông minh (Ưu tiên 2)
-                </div>
-                <div style={{ fontSize: '0.74rem', color: '#b45309' }}>
-                  Hệ thống hỗ trợ bạn chọn trực tiếp mã mong muốn ngay tại đây để cập nhật ngay bảng kết quả.
-                </div>
+              <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#92400e' }}>
+                Phát hiện {transformationResult.discrepancies.length} thuộc tính lệch mã giữa Ưu tiên 1 và Ưu tiên 2 (Mặc định giữ Ưu tiên 1)
               </div>
             </div>
 
@@ -533,7 +528,7 @@ export default function PreviewTraceTab({
                 onClick={() => setIsDiscrepancyBannerExpanded(!isDiscrepancyBannerExpanded)}
                 className="btn"
                 style={{
-                  padding: '6px 14px',
+                  padding: '5px 12px',
                   fontSize: '0.78rem',
                   fontWeight: 700,
                   background: isDiscrepancyBannerExpanded ? '#fef3c7' : '#ffffff',
@@ -544,7 +539,7 @@ export default function PreviewTraceTab({
                   gap: '6px'
                 }}
               >
-                <span>{isDiscrepancyBannerExpanded ? 'Thu gọn danh sách chênh lệch' : `Xem & Chọn mã ngay (${transformationResult.discrepancies.length})`}</span>
+                <span>{isDiscrepancyBannerExpanded ? 'Thu gọn' : `Xem chi tiết (${transformationResult.discrepancies.length})`}</span>
                 {isDiscrepancyBannerExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
               </button>
 
@@ -552,9 +547,9 @@ export default function PreviewTraceTab({
                 <button
                   onClick={onGoToMapping}
                   className="btn btn-warning"
-                  style={{ padding: '6px 14px', fontSize: '0.78rem', fontWeight: 700 }}
+                  style={{ padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700 }}
                 >
-                  <span>Quy Tắc Đối Chiếu</span>
+                  <span>Quy Tắc</span>
                   <ArrowRight size={13} />
                 </button>
               )}
@@ -659,15 +654,15 @@ export default function PreviewTraceTab({
                             fontWeight: 600
                           })
                         }}
-                        title={!isUsingP2 ? 'Đang chọn áp dụng mã theo File tham chiếu (Ưu tiên 1)' : 'Bấm để chuyển sang áp dụng mã theo File tham chiếu (Ưu tiên 1)'}
+                        title={!isUsingP2 ? 'Đang áp dụng Ưu tiên 1' : 'Bấm để dùng Ưu tiên 1'}
                       >
                         {!isUsingP2 ? (
                           <>
                             <Check size={13} strokeWidth={3} />
-                            <span>✔ Đang chọn: Ưu tiên 1 (File: {p1Code})</span>
+                            <span>✔ Ưu tiên 1 ({p1Code})</span>
                           </>
                         ) : (
-                          <span>📁 Chuyển sang Ưu tiên 1 (File: {p1Code})</span>
+                          <span>Ưu tiên 1 ({p1Code})</span>
                         )}
                       </button>
 
@@ -697,15 +692,15 @@ export default function PreviewTraceTab({
                             fontWeight: 600
                           })
                         }}
-                        title={isUsingP2 ? 'Đang chọn áp dụng mã theo CMS thông minh (Ưu tiên 2)' : 'Bấm để chuyển sang áp dụng mã theo CMS thông minh (Ưu tiên 2)'}
+                        title={isUsingP2 ? 'Đang áp dụng Ưu tiên 2' : 'Bấm để chọn Ưu tiên 2'}
                       >
                         {isUsingP2 ? (
                           <>
                             <Check size={13} strokeWidth={3} />
-                            <span>✔ Đang chọn: Ưu tiên 2 (CMS: {p2Code})</span>
+                            <span>✔ Ưu tiên 2 ({p2Code})</span>
                           </>
                         ) : (
-                          <span>⚡ Chuyển sang Ưu tiên 2 (CMS: {p2Code})</span>
+                          <span>⚡ Chọn Ưu tiên 2 ({p2Code})</span>
                         )}
                       </button>
                     </div>
@@ -1052,9 +1047,9 @@ export default function PreviewTraceTab({
                               alignItems: 'center',
                               gap: '4px',
                               boxShadow: '0 1px 3px rgba(16, 185, 129, 0.2)'
-                            }} title="Thuộc tính này đã được bạn xác nhận áp dụng mã CMS theo Danh mục thông minh (Ưu tiên 2)">
+                            }} title="Đã duyệt Ưu tiên 2">
                               <Check size={12} strokeWidth={3} />
-                              <span>Đã duyệt Ưu tiên 2</span>
+                              <span>Đã duyệt P2</span>
                             </span>
                           ) : (row.trace.source === 'priority1_accepted' || row.trace.isUserConfirmedP1) ? (
                             <span style={{ 
@@ -1068,9 +1063,9 @@ export default function PreviewTraceTab({
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px'
-                            }} title="Thuộc tính này đã được bạn xác nhận giữ mã CMS theo File tham chiếu (Ưu tiên 1)">
+                            }} title="Đã duyệt Ưu tiên 1">
                               <Check size={12} strokeWidth={3} />
-                              <span>Đã duyệt Ưu tiên 1</span>
+                              <span>Đã duyệt P1</span>
                             </span>
                           ) : (row.trace.source === 'priority2' || row.trace.isAutoMapped) ? (
                             <span style={{ 
@@ -1084,9 +1079,9 @@ export default function PreviewTraceTab({
                               display: 'inline-flex',
                               alignItems: 'center',
                               gap: '4px'
-                            }} title="Tự động nhận diện từ CMS (Ưu tiên 2)">
+                            }} title="Tự động nhận diện từ CMS">
                               <Zap size={11} />
-                              <span>Ưu tiên 2 (Tự động)</span>
+                              <span>Ưu tiên 2</span>
                             </span>
                           ) : (
                             <span style={{ 
@@ -1097,7 +1092,7 @@ export default function PreviewTraceTab({
                               padding: '2px 7px', 
                               borderRadius: '5px', 
                               fontWeight: 600 
-                            }} title="Quy tắc lấy từ File tham chiếu (Ưu tiên 1)">
+                            }} title="File tham chiếu (Ưu tiên 1)">
                               📁 Ưu tiên 1
                             </span>
                           )}
@@ -1111,8 +1106,8 @@ export default function PreviewTraceTab({
                               padding: '2px 6px', 
                               borderRadius: '4px', 
                               fontWeight: 700 
-                            }} title="Có sự chênh lệch mã giữa File tham chiếu và CMS thông minh">
-                              ⚠️ Chênh lệch
+                            }} title="Lệch mã với CMS (đang giữ Ưu tiên 1)">
+                              ⚠️ Lệch mã CMS
                             </span>
                           )}
                         </div>

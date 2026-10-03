@@ -137,11 +137,8 @@ export default function MappingRulesTab({
       <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '18px' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
           <div>
-            <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', margin: 0, display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <span>Quy Tắc Mapping PIM ➔ CMS</span>
-              <span style={{ fontSize: '0.74rem', fontWeight: 500, color: '#64748b', background: '#f1f5f9', padding: '3px 8px', borderRadius: '6px' }}>
-                Ưu tiên 1: File tham chiếu | Ưu tiên 2: Nhận diện thông minh
-              </span>
+            <h2 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+              Quy Tắc Mapping
             </h2>
           </div>
 
@@ -162,7 +159,7 @@ export default function MappingRulesTab({
                 transition: 'all 0.15s ease'
               }}
             >
-              Thuộc Tính Đã Lưu ({attributeMappings.length})
+              Thuộc Tính ({attributeMappings.length})
             </button>
 
             {autoMappedAttributes.length > 0 && (
@@ -185,7 +182,7 @@ export default function MappingRulesTab({
                 }}
               >
                 <Zap size={13} />
-                <span>Nhận Diện Tự Động ({autoMappedAttributes.length})</span>
+                <span>Tự Động ({autoMappedAttributes.length})</span>
               </button>
             )}
 
@@ -209,7 +206,7 @@ export default function MappingRulesTab({
                 }}
               >
                 <ShieldAlert size={14} />
-                <span>Chênh Lệch Mã ({discrepancies.length})</span>
+                <span>Chênh Lệch ({discrepancies.length})</span>
               </button>
             )}
 
@@ -236,16 +233,16 @@ export default function MappingRulesTab({
 
       {/* Discrepancies Warning Banner - Single or Multiple */}
       {discrepancies.length > 0 && (
-        <div className="glass-panel" style={{ padding: '16px 20px', marginBottom: '18px', borderColor: '#fde68a', background: '#fffef5' }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
+        <div className="glass-panel" style={{ padding: '14px 18px', marginBottom: '18px', borderColor: '#fde68a', background: '#fffef5' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldAlert size={18} color="#d97706" />
-              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#92400e' }}>
-                Cảnh Báo Chênh Lệch Mã Giữa File Tham Chiếu (Ưu tiên 1) và CMS Thông Minh (Ưu tiên 2):
+              <ShieldAlert size={16} color="#d97706" />
+              <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#92400e' }}>
+                Lệch mã giữa Ưu tiên 1 và Ưu tiên 2 ({discrepancies.length})
               </span>
             </div>
-            <span style={{ fontSize: '0.74rem', color: '#b45309', background: '#fef3c7', padding: '3px 10px', borderRadius: '6px', fontWeight: 600 }}>
-              Mặc định hệ thống áp dụng theo File tham chiếu (Ưu tiên 1)
+            <span style={{ fontSize: '0.72rem', color: '#b45309', background: '#fef3c7', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>
+              Mặc định giữ Ưu tiên 1
             </span>
           </div>
 
@@ -688,17 +685,13 @@ export default function MappingRulesTab({
       )}
 
       {/* Bottom Bar */}
-      <div className="glass-panel" style={{ padding: '14px 20px', marginTop: '18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
-        <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-          Hệ thống ưu tiên số 1 cho file tham chiếu. Các thuộc tính thiếu sẽ được tự động nhận diện theo Ưu tiên 2.
-        </div>
-
+      <div style={{ marginTop: '18px', display: 'flex', justifyContent: 'flex-end' }}>
         <button
           onClick={onProceedToPreview}
           className="btn btn-primary"
           style={{ padding: '8px 18px', fontSize: '0.82rem' }}
         >
-          <span>Chạy Chuyển Đổi & Xem Trước</span>
+          <span>Xem Trước & Đối Soát</span>
           <ArrowRight size={15} />
         </button>
       </div>

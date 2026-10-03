@@ -215,6 +215,7 @@ export function runMappingTransformation({
   cmsCatalog = { categories: [], properties: new Map(), valueLookup: new Map() },
   categoryMappings = [],
   attributeMappings = [],
+  mappingRef = [],
   userConfig = { username: '174873', fullname: 'Quản trị viên', siteId: '2', languageId: 'vi-VN' }
 }) {
   const validImportRows = [];
@@ -244,8 +245,38 @@ export function runMappingTransformation({
     }
   });
 
-  // Index Attribute Mappings (Priority 1) by `${cmsCategoryId}___${pimAttributeCode.toLowerCase()}`
+  // Index Attribute Mappings (Ưu tiên 1 - File tham chiếu & Đã lưu)
   const attrMap = new Map();
+
+  // 1. Nạp toàn bộ quy tắc gốc từ file tham chiếu mappingRef (Ưu tiên 1 bắt buộc)
+  const refList = Array.isArray(mappingRef) ? mappingRef : (mappingRef?.mappings || []);
+  refList.forEach(m => {
+    const catId = String(m.cmsCategoryId || m['MÃ NGÀNH HÀNG CMS'] || '').trim();
+    const pimCode = String(m.pimAttributeCode || m['MÃ THUỘC TÍNH PIM'] || '').trim();
+    const propId = String(m.cmsPropertyId || m['MÃ THUỘC TÍNH TSKT'] || '').trim();
+    const propName = m.cmsPropertyName || m['TÊN THUỘC TÍNH TSKT'] || '';
+    const catName = m.cmsCategoryName || m['TÊN NGÀNH HÀNG CMS'] || '';
+    if (catId && pimCode && propId) {
+      const key = `${catId}___${pimCode.toLowerCase()}`;
+      let pimMode = 'tskt';
+      if (pimCode.includes('_filter_') || pimCode.endsWith('_filter')) pimMode = 'filter';
+      else if (pimCode.includes('model') || pimCode.includes('product_line') || pimCode.includes('size_') || pimCode.includes('mass_')) pimMode = 'text';
+
+      attrMap.set(key, {
+        cmsCategoryId: catId,
+        cmsCategoryName: catName,
+        pimAttributeCode: pimCode,
+        cmsPropertyId: propId,
+        cmsPropertyName: propName,
+        pimMode,
+        status: 'Confirmed',
+        source: 'file_ref',
+        updatedAt: new Date().toISOString()
+      });
+    }
+  });
+
+  // 2. Nạp đè bằng bảng quy tắc attributeMappings (chứa các tùy chỉnh/xác nhận của người dùng)
   attributeMappings.forEach(am => {
     if (am.status === 'Confirmed') {
       const key = `${String(am.cmsCategoryId).trim()}___${String(am.pimAttributeCode).trim().toLowerCase()}`;
@@ -432,10 +463,11 @@ export function runMappingTransformation({
         hasDiscrepancy = true;
         const discKey = `${cmsCategoryId}___${pimAttrCode.toLowerCase()}`;
         if (!discrepanciesMap.has(discKey)) {
-          // MẶC ĐỊNH DÙNG ƯU TIÊN 1: Trừ khi người dùng đã chủ động bấm duyệt Ưu tiên 2
-          const isUsingP2 = isUserConfirmedP2;
+          // BẮT BUỘC DÙNG ƯU TIÊN 1: Tuyệt đối không mặc định chọn Ưu tiên 2.
+          // Chỉ áp dụng Ưu tiên 2 khi người dùng ĐÃ CHỦ ĐỘNG XÁC NHẬN (isUserConfirmedP2).
+          const isUsingP2 = Boolean(isUserConfirmedP2);
           const appliedId = isUsingP2 ? p2CmsId : p1FileId;
-          const appliedSrc = isUsingP2 ? 'priority2' : 'priority1';
+          const appliedSrc = isUsingP2 ? 'priority2_accepted' : 'priority1';
 
           discrepanciesMap.set(discKey, {
             id: discKey,
@@ -457,37 +489,38 @@ export function runMappingTransformation({
             appliedPropertyId: appliedId,
             appliedSource: appliedSrc,
             isResolved: isUserConfirmedP2 || isUserConfirmedP1,
-            resolvedChoice: isUserConfirmedP2 ? 'priority2' : (isUserConfirmedP1 ? 'priority1' : 'priority1')
+            resolvedChoice: isUserConfirmedP2 ? 'priority2' : 'priority1'
           });
         }
       }
 
       if (p1Rule) {
-        // MẶC ĐỊNH: Ưu tiên 1 luôn áp dụng. KHÔNG BAO GIỜ hold vì discrepancy.
-        // Nếu user đã xác nhận chọn P2 → cho phép dùng P2
-
+        // MẶC ĐỊNH BẮT BUỘC: Ưu tiên 1 luôn là lựa chọn chính thức.
+        // Chỉ khi người dùng đã chủ động bấm duyệt chọn Ưu tiên 2 mới chuyển sang P2.
         let sourceTag = p1Rule.source || 'priority1';
         let appliedId = p1FileId;
-        // Label hiển thị: dùng tên từ P2 (CMS catalog) nếu có để check nhanh
-        let appliedName = (p2Match ? p2CmsName : p1FileName) || p1FileName;
-        let appliedPimMode = p1Rule.pimMode || (p2Match ? (p2Match.propertyType === 0 ? 'text' : 'tskt') : 'tskt');
+        let appliedName = p1FileName;
+        let appliedPimMode = p1Rule.pimMode || 'tskt';
 
         if (isRealDiscrepancy && isUserConfirmedP2) {
-          // User ĐÃ XÁC NHẬN chọn P2 → áp dụng P2
+          // Người dùng ĐÃ XÁC NHẬN CHỌN Ưu tiên 2
           sourceTag = 'priority2_accepted';
           appliedId = p2CmsId;
           appliedName = p2CmsName;
           if (p2Match && p2Match.propertyType === 0) appliedPimMode = 'text';
         } else if (isRealDiscrepancy) {
-          // Có chênh lệch nhưng chưa chọn → vẫn dùng P1, đánh dấu cảnh báo
-          sourceTag = 'priority1';
+          // Có chênh lệch mã giữa P1 và P2: BẮT BUỘC giữ Ưu tiên 1, gắn cờ cảnh báo
+          sourceTag = isUserConfirmedP1 ? 'priority1_accepted' : 'priority1';
+          appliedId = p1FileId;
+          appliedName = p1FileName;
         }
 
         effectiveRule = {
           cmsPropertyId: appliedId,
           cmsPropertyName: appliedName,
           pimMode: appliedPimMode,
-          source: sourceTag
+          source: sourceTag,
+          hasDiscrepancy: isRealDiscrepancy
         };
         usedSource = sourceTag;
       } else if (p2Match) {
