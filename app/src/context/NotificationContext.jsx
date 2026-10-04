@@ -127,18 +127,18 @@ export function NotificationProvider({ children }) {
       {children}
 
       {/* ======================================================== */}
-      {/* FLOATING TOASTS CONTAINER (Top-Right)                     */}
+      {/* FLOATING TOASTS CONTAINER (Bottom-Right, Compact & Modern) */}
       {/* ======================================================== */}
       <div 
         style={{
           position: 'fixed',
-          top: '20px',
+          bottom: '24px',
           right: '24px',
           zIndex: 9999,
           display: 'flex',
-          flexDirection: 'column',
-          gap: '10px',
-          maxWidth: '420px',
+          flexDirection: 'column-reverse',
+          gap: '8px',
+          maxWidth: '350px',
           pointerEvents: 'none'
         }}
       >
@@ -147,79 +147,107 @@ export function NotificationProvider({ children }) {
           const isError = t.type === 'error';
           const isWarning = t.type === 'warning';
 
-          const borderColor = isSuccess 
-            ? 'rgba(16, 185, 129, 0.45)' 
+          const accentColor = isSuccess 
+            ? '#10b981' 
             : isError 
-            ? 'rgba(239, 68, 68, 0.45)' 
+            ? '#ef4444' 
             : isWarning 
-            ? 'rgba(245, 158, 11, 0.45)' 
-            : 'rgba(99, 102, 241, 0.45)';
+            ? '#f59e0b' 
+            : '#2563eb';
 
-          const bgColor = isSuccess 
-            ? 'rgba(6, 78, 59, 0.92)' 
+          const iconBg = isSuccess 
+            ? '#ecfdf5' 
             : isError 
-            ? 'rgba(127, 29, 29, 0.92)' 
+            ? '#fef2f2' 
             : isWarning 
-            ? 'rgba(120, 53, 15, 0.92)' 
-            : 'rgba(30, 41, 59, 0.94)';
+            ? '#fffbeb' 
+            : '#eff6ff';
 
-          const iconColor = isSuccess ? '#34d399' : isError ? '#f87171' : isWarning ? '#fbbf24' : '#818cf8';
+          const iconColor = isSuccess 
+            ? '#059669' 
+            : isError 
+            ? '#dc2626' 
+            : isWarning 
+            ? '#d97706' 
+            : '#2563eb';
 
           return (
             <div
               key={t.id}
-              className="animate-fade-in"
+              className="animate-toast"
               style={{
                 pointerEvents: 'auto',
-                background: bgColor,
-                border: `1.5px solid ${borderColor}`,
-                boxShadow: '0 15px 35px -5px rgba(0, 0, 0, 0.65), 0 0 15px rgba(0, 0, 0, 0.4)',
-                backdropFilter: 'blur(12px)',
-                borderRadius: '12px',
-                padding: '14px 16px',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderLeft: `4px solid ${accentColor}`,
+                boxShadow: '0 10px 25px -4px rgba(15, 23, 42, 0.12), 0 4px 6px -2px rgba(15, 23, 42, 0.04)',
+                borderRadius: '10px',
+                padding: '10px 12px',
                 display: 'flex',
                 alignItems: 'flex-start',
-                gap: '12px',
-                color: '#f8fafc',
-                transition: 'all 0.25s ease'
+                gap: '10px',
+                transition: 'all 0.2s ease'
               }}
             >
-              <div style={{ marginTop: '2px', color: iconColor, flexShrink: 0 }}>
-                {isSuccess && <CheckCircle2 size={20} />}
-                {isError && <AlertCircle size={20} />}
-                {isWarning && <AlertTriangle size={20} />}
-                {!isSuccess && !isError && !isWarning && <Info size={20} />}
+              <div 
+                style={{ 
+                  width: '26px', 
+                  height: '26px', 
+                  borderRadius: '6px', 
+                  background: iconBg, 
+                  color: iconColor, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  flexShrink: 0,
+                  marginTop: '1px'
+                }}
+              >
+                {isSuccess && <CheckCircle2 size={16} strokeWidth={2.3} />}
+                {isError && <AlertCircle size={16} strokeWidth={2.3} />}
+                {isWarning && <AlertTriangle size={16} strokeWidth={2.3} />}
+                {!isSuccess && !isError && !isWarning && <Info size={16} strokeWidth={2.3} />}
               </div>
 
-              <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ flex: 1, minWidth: 0, paddingRight: '4px' }}>
                 {t.title && (
-                  <div style={{ fontWeight: 700, fontSize: '0.88rem', marginBottom: '2px', color: '#ffffff' }}>
+                  <div style={{ fontWeight: 650, fontSize: '0.82rem', lineHeight: '1.25', color: '#0f172a' }}>
                     {t.title}
                   </div>
                 )}
-                <div style={{ fontSize: '0.82rem', lineHeight: '1.45', color: '#e2e8f0', wordBreak: 'break-word' }}>
+                <div style={{ fontSize: '0.75rem', lineHeight: '1.4', color: '#475569', marginTop: t.title ? '2px' : 0, wordBreak: 'break-word' }}>
                   {t.message}
                 </div>
               </div>
 
               <button
                 onClick={() => removeToast(t.id)}
+                title="Đóng thông báo"
                 style={{
                   background: 'transparent',
                   border: 'none',
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  color: '#94a3b8',
                   cursor: 'pointer',
-                  padding: '2px',
+                  padding: '3px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   borderRadius: '4px',
-                  transition: 'color 0.15s ease'
+                  transition: 'all 0.15s ease',
+                  flexShrink: 0,
+                  marginTop: '-2px',
+                  marginRight: '-2px'
                 }}
-                onMouseEnter={e => e.currentTarget.style.color = '#ffffff'}
-                onMouseLeave={e => e.currentTarget.style.color = 'rgba(255, 255, 255, 0.5)'}
+                onMouseEnter={e => {
+                  e.currentTarget.style.color = '#1e293b';
+                  e.currentTarget.style.background = '#f1f5f9';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.color = '#94a3b8';
+                  e.currentTarget.style.background = 'transparent';
+                }}
               >
-                <X size={15} />
+                <X size={14} />
               </button>
             </div>
           );
@@ -237,8 +265,8 @@ export function NotificationProvider({ children }) {
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(3, 7, 18, 0.82)',
-            backdropFilter: 'blur(8px)',
+            background: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(4px)',
             zIndex: 10000,
             display: 'flex',
             alignItems: 'center',
@@ -255,11 +283,11 @@ export function NotificationProvider({ children }) {
             className="animate-fade-in"
             style={{
               width: '100%',
-              maxWidth: '480px',
-              background: '#0f172a',
-              border: '1px solid rgba(99, 102, 241, 0.35)',
-              boxShadow: '0 25px 60px -10px rgba(0, 0, 0, 0.85), 0 0 25px rgba(99, 102, 241, 0.15)',
-              borderRadius: '16px',
+              maxWidth: '440px',
+              background: '#ffffff',
+              border: '1px solid #e2e8f0',
+              boxShadow: '0 20px 40px -10px rgba(15, 23, 42, 0.2), 0 0 1px rgba(15, 23, 42, 0.1)',
+              borderRadius: '14px',
               padding: '24px',
               textAlign: 'center',
               position: 'relative'
@@ -268,62 +296,63 @@ export function NotificationProvider({ children }) {
             {/* Top Icon Badge */}
             <div 
               style={{
-                width: '54px',
-                height: '54px',
-                borderRadius: '16px',
-                margin: '0 auto 16px auto',
+                width: '50px',
+                height: '50px',
+                borderRadius: '12px',
+                margin: '0 auto 14px auto',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: dialog.type === 'danger' || dialog.type === 'error'
-                  ? 'rgba(239, 68, 68, 0.15)'
+                  ? '#fef2f2'
                   : dialog.type === 'warning'
-                  ? 'rgba(245, 158, 11, 0.15)'
+                  ? '#fffbeb'
                   : dialog.type === 'success'
-                  ? 'rgba(16, 185, 129, 0.15)'
-                  : 'rgba(99, 102, 241, 0.15)',
+                  ? '#ecfdf5'
+                  : '#eff6ff',
                 color: dialog.type === 'danger' || dialog.type === 'error'
-                  ? '#f87171'
+                  ? '#dc2626'
                   : dialog.type === 'warning'
-                  ? '#fbbf24'
+                  ? '#d97706'
                   : dialog.type === 'success'
-                  ? '#34d399'
-                  : '#818cf8'
+                  ? '#059669'
+                  : '#2563eb'
               }}
             >
               {dialog.type === 'danger' || dialog.type === 'error' ? (
-                <Trash2 size={26} />
+                <Trash2 size={24} />
               ) : dialog.type === 'warning' ? (
-                <AlertTriangle size={26} />
+                <AlertTriangle size={24} />
               ) : dialog.type === 'success' ? (
-                <CheckCircle2 size={26} />
+                <CheckCircle2 size={24} />
               ) : (
-                <Info size={26} />
+                <Info size={24} />
               )}
             </div>
 
             {/* Title */}
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 700, color: '#f8fafc', marginBottom: '8px' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>
               {dialog.title}
             </h3>
 
             {/* Message Body */}
-            <div style={{ fontSize: '0.88rem', color: 'var(--text-muted)', lineHeight: '1.55', marginBottom: '24px', wordBreak: 'break-word' }}>
+            <div style={{ fontSize: '0.85rem', color: '#475569', lineHeight: '1.5', marginBottom: '22px', wordBreak: 'break-word' }}>
               {dialog.message}
             </div>
 
             {/* Action Buttons */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}>
               {dialog.isConfirm && (
                 <button
                   type="button"
                   onClick={dialog.onCancel}
                   className="btn btn-secondary"
                   style={{
-                    padding: '10px 20px',
-                    fontSize: '0.86rem',
+                    padding: '9px 18px',
+                    fontSize: '0.84rem',
                     flex: 1,
-                    justifyContent: 'center'
+                    justifyContent: 'center',
+                    borderRadius: '8px'
                   }}
                 >
                   {dialog.cancelText || 'Hủy bỏ'}
@@ -335,8 +364,8 @@ export function NotificationProvider({ children }) {
                 onClick={dialog.onConfirm}
                 className="btn"
                 style={{
-                  padding: '10px 22px',
-                  fontSize: '0.86rem',
+                  padding: '9px 20px',
+                  fontSize: '0.84rem',
                   fontWeight: 600,
                   flex: 1,
                   justifyContent: 'center',
@@ -350,8 +379,8 @@ export function NotificationProvider({ children }) {
                   borderRadius: '8px',
                   cursor: 'pointer',
                   boxShadow: dialog.type === 'danger' 
-                    ? '0 4px 15px rgba(239, 68, 68, 0.4)' 
-                    : '0 4px 15px rgba(99, 102, 241, 0.4)'
+                    ? '0 4px 12px rgba(239, 68, 68, 0.3)' 
+                    : '0 4px 12px rgba(37, 99, 235, 0.25)'
                 }}
               >
                 {dialog.confirmText || 'Đồng ý'}

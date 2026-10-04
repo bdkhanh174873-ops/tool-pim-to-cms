@@ -20,7 +20,9 @@ import {
   ShieldAlert,
   Zap,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Info,
+  RotateCcw
 } from 'lucide-react';
 import { exportCMSImportExcel, exportCMSNewValuesExcel } from '../services/excelExporter';
 import { useNotification } from '../context/NotificationContext';
@@ -30,15 +32,21 @@ export default function PreviewTraceTab({
   setTransformationResult,
   onSupplementCmsId,
   userConfig,
+  valueMappings = {},
+  onAcceptValueSuggestion,
+  onAcceptAllValueSuggestions,
+  onRemoveValueMapping,
   onProceedToExport,
   onLoadSampleAll,
   onGoToUpload,
   onGoToMapping,
   onResolveDiscrepancy,
+  onResetAllDiscrepanciesToP1,
   isLoading
 }) {
   const notify = useNotification();
   const [activeSubTab, setActiveSubTab] = useState('valid'); // 'valid' | 'hold' | 'proposals'
+  const [focusedProposalTarget, setFocusedProposalTarget] = useState(null);
   const [selectedTrace, setSelectedTrace] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [propertyFilter, setPropertyFilter] = useState('ALL');
@@ -98,21 +106,11 @@ export default function PreviewTraceTab({
             Chưa có dữ liệu chuyển đổi để xem trước
           </h2>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '14px', flexWrap: 'wrap' }}>
-            <button
-              onClick={onLoadSampleAll}
-              disabled={isLoading}
-              className="btn btn-primary"
-              style={{ padding: '12px 26px', fontSize: '0.94rem' }}
-            >
-              <Sparkles size={18} />
-              <span>{isLoading ? 'Đang nạp dữ liệu...' : '⚡ Nạp trọn bộ dữ liệu Adapter Sạc & Xem ngay'}</span>
-            </button>
-
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
             <button
               onClick={onGoToUpload}
-              className="btn btn-secondary"
-              style={{ padding: '12px 22px', fontSize: '0.94rem' }}
+              className="btn btn-primary"
+              style={{ padding: '12px 26px', fontSize: '0.94rem' }}
             >
               <span>Quay lại Bước 1: Tải file sản phẩm</span>
             </button>
@@ -123,6 +121,41 @@ export default function PreviewTraceTab({
   }
 
   const { validImportRows = [], holdRows = [], proposals = [], stats = {} } = transformationResult || {};
+
+  // Filter proposals according to focused proposal target or search term
+  const displayedProposals = useMemo(() => {
+    let list = proposals;
+
+    if (focusedProposalTarget) {
+      const targetFiltered = proposals.filter(p => {
+        const matchAttr = p.pimAttributeCode && focusedProposalTarget.pimAttributeCode &&
+          p.pimAttributeCode.trim().toLowerCase() === focusedProposalTarget.pimAttributeCode.trim().toLowerCase();
+        const matchVal = p.rawText && focusedProposalTarget.rawValue &&
+          p.rawText.trim().toLowerCase() === focusedProposalTarget.rawValue.trim().toLowerCase();
+        const matchPropId = p.cmsPropertyId && focusedProposalTarget.cmsPropertyId &&
+          String(p.cmsPropertyId).trim() === String(focusedProposalTarget.cmsPropertyId).trim();
+
+        return (matchAttr && matchVal) || matchVal || (matchAttr && matchPropId) || matchAttr;
+      });
+
+      if (targetFiltered.length > 0) {
+        list = targetFiltered;
+      }
+    }
+
+    if (searchTerm && searchTerm.trim()) {
+      const term = searchTerm.toLowerCase();
+      list = list.filter(p => 
+        (p.rawText && p.rawText.toLowerCase().includes(term)) ||
+        (p.cmsPropertyName && p.cmsPropertyName.toLowerCase().includes(term)) ||
+        (p.cmsPropertyId && String(p.cmsPropertyId).toLowerCase().includes(term)) ||
+        (p.pimAttributeCode && p.pimAttributeCode.toLowerCase().includes(term)) ||
+        (p.sampleModels && p.sampleModels.some(m => String(m).toLowerCase().includes(term)))
+      );
+    }
+
+    return list;
+  }, [proposals, focusedProposalTarget, searchTerm]);
 
   // Quick Export directly from Preview Tab with selected mode
   const handleQuickExport = (mode = valueDisplayMode) => {
@@ -398,15 +431,31 @@ export default function PreviewTraceTab({
             <div>
               <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>PIM Nguồn</div>
               <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-main)' }}>
-                {stats.totalProducts?.toLocaleString() || 0} SP <span style={{ fontSize: '0.72rem', fontWeight: 500, color: 'var(--text-dim)' }}>({stats.distinctModels || 0} model)</span>
+                {stats.totalProducts?.toLocaleString() || 0} SP
               </div>
             </div>
           </div>
 
           <div style={{ width: '1px', height: '22px', background: '#e2e8f0' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+          {/* Tab 1: Dòng Import Hợp Lệ */}
+          <div 
+            onClick={() => setActiveSubTab('valid')}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              cursor: 'pointer',
+              padding: '6px 12px',
+              borderRadius: '9px',
+              background: activeSubTab === 'valid' ? '#ecfdf5' : '#ffffff',
+              border: activeSubTab === 'valid' ? '1.5px solid #10b981' : '1px solid #e2e8f0',
+              boxShadow: activeSubTab === 'valid' ? '0 2px 6px rgba(16, 185, 129, 0.15)' : 'none',
+              transition: 'all 0.15s ease'
+            }}
+            title="Bấm để lọc xem danh sách Dòng Import Hợp Lệ"
+          >
+            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: activeSubTab === 'valid' ? '#10b981' : '#ecfdf5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: activeSubTab === 'valid' ? '#ffffff' : '#059669' }}>
               <CheckCircle2 size={15} />
             </div>
             <div>
@@ -419,12 +468,28 @@ export default function PreviewTraceTab({
 
           <div style={{ width: '1px', height: '22px', background: '#e2e8f0' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#dc2626' }}>
+          {/* Tab 2: Cần xử lý */}
+          <div 
+            onClick={() => setActiveSubTab('hold')}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              cursor: 'pointer',
+              padding: '6px 12px',
+              borderRadius: '9px',
+              background: activeSubTab === 'hold' ? '#fef2f2' : '#ffffff',
+              border: activeSubTab === 'hold' ? '1.5px solid #ef4444' : '1px solid #e2e8f0',
+              boxShadow: activeSubTab === 'hold' ? '0 2px 6px rgba(239, 68, 68, 0.15)' : 'none',
+              transition: 'all 0.15s ease'
+            }}
+            title="Bấm để lọc xem danh sách Cần xử lý"
+          >
+            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: activeSubTab === 'hold' ? '#ef4444' : '#fef2f2', display: 'flex', alignItems: 'center', justifyContent: 'center', color: activeSubTab === 'hold' ? '#ffffff' : '#dc2626' }}>
               <AlertCircle size={15} />
             </div>
             <div>
-              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Bị Giữ Lại (Cần xử lý)</div>
+              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Cần xử lý</div>
               <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#dc2626' }}>
                 {stats.holdRowsCount?.toLocaleString() || 0} <span style={{ fontSize: '0.72rem', fontWeight: 500, color: 'var(--text-dim)' }}>dòng</span>
               </div>
@@ -433,8 +498,27 @@ export default function PreviewTraceTab({
 
           <div style={{ width: '1px', height: '22px', background: '#e2e8f0' }} />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#1d4ed8' }}>
+          {/* Tab 3: Đề Xuất Tạo Mới */}
+          <div 
+            onClick={() => {
+              setActiveSubTab('proposals');
+              setFocusedProposalTarget(null);
+            }}
+            style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px',
+              cursor: 'pointer',
+              padding: '6px 12px',
+              borderRadius: '9px',
+              background: activeSubTab === 'proposals' ? '#eff6ff' : '#ffffff',
+              border: activeSubTab === 'proposals' ? '1.5px solid #0284c7' : '1px solid #e2e8f0',
+              boxShadow: activeSubTab === 'proposals' ? '0 2px 6px rgba(2, 132, 199, 0.15)' : 'none',
+              transition: 'all 0.15s ease'
+            }}
+            title="Bấm để lọc xem danh sách Đề Xuất Tạo Mới"
+          >
+            <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: activeSubTab === 'proposals' ? '#0284c7' : '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', color: activeSubTab === 'proposals' ? '#ffffff' : '#1d4ed8' }}>
               <Sparkles size={15} />
             </div>
             <div>
@@ -496,15 +580,15 @@ export default function PreviewTraceTab({
         )}
       </div>
 
-      {/* Cảnh Báo Chênh Lệch Mã Giữa File Tham Chiếu (Ưu tiên 1) & CMS Thông Minh (Ưu tiên 2) */}
+      {/* Thông Báo Đối Soát Mã Giữa File Tham Chiếu (Ưu tiên 1) & CMS Thông Minh */}
       {transformationResult?.discrepancies?.length > 0 && (
         <div style={{
-          background: '#fffef5',
-          border: '1.5px solid #fed7aa',
+          background: '#f8fafc',
+          border: '1.5px solid #bfdbfe',
           borderRadius: '12px',
           padding: '14px 18px',
           marginBottom: '16px',
-          boxShadow: '0 2px 8px rgba(217, 119, 6, 0.08)'
+          boxShadow: '0 2px 8px rgba(37, 99, 235, 0.05)'
         }}>
           <div style={{
             display: 'flex',
@@ -513,60 +597,144 @@ export default function PreviewTraceTab({
             flexWrap: 'wrap',
             gap: '12px'
           }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ width: '30px', height: '30px', borderRadius: '8px', background: '#fef3c7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#d97706' }}>
-                <ShieldAlert size={16} />
-              </div>
-              <div style={{ fontSize: '0.86rem', fontWeight: 700, color: '#92400e' }}>
-                Phát hiện {transformationResult.discrepancies.length} thuộc tính lệch mã giữa Ưu tiên 1 và Ưu tiên 2 (Mặc định giữ Ưu tiên 1)
-              </div>
-            </div>
+            {(() => {
+              const p2AcceptedDiscs = (transformationResult.discrepancies || []).filter(d => 
+                d.appliedSource === 'priority2_accepted' || d.resolvedChoice === 'priority2'
+              );
+              const hasP2Accepted = p2AcceptedDiscs.length > 0;
+              const p1DefaultCount = (transformationResult.discrepancies || []).length - p2AcceptedDiscs.length;
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                type="button"
-                onClick={() => setIsDiscrepancyBannerExpanded(!isDiscrepancyBannerExpanded)}
-                className="btn"
-                style={{
-                  padding: '5px 12px',
-                  fontSize: '0.78rem',
-                  fontWeight: 700,
-                  background: isDiscrepancyBannerExpanded ? '#fef3c7' : '#ffffff',
-                  border: '1px solid #fed7aa',
-                  color: '#92400e',
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px'
-                }}
-              >
-                <span>{isDiscrepancyBannerExpanded ? 'Thu gọn' : `Xem chi tiết (${transformationResult.discrepancies.length})`}</span>
-                {isDiscrepancyBannerExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-              </button>
+              return (
+                <>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                      width: '32px',
+                      height: '32px',
+                      borderRadius: '8px',
+                      background: hasP2Accepted ? '#fef3c7' : '#eff6ff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      color: hasP2Accepted ? '#d97706' : '#2563eb',
+                      flexShrink: 0
+                    }}>
+                      <Info size={18} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.86rem', fontWeight: 700, color: hasP2Accepted ? '#92400e' : '#1e40af' }}>
+                        {hasP2Accepted ? (
+                          <>Thông báo đối soát: Có {transformationResult.discrepancies.length} thuộc tính có mã gợi ý khác ({p2AcceptedDiscs.length} đã duyệt Ưu tiên 2, {p1DefaultCount} giữ Ưu tiên 1)</>
+                        ) : (
+                          <>Thông báo đối soát: Có {transformationResult.discrepancies.length} thuộc tính có mã CMS gợi ý khác (Đang giữ Ưu tiên 1 mặc định)</>
+                        )}
+                      </div>
+                      <div style={{ fontSize: '0.73rem', color: '#64748b' }}>
+                        {hasP2Accepted ? (
+                          <>Đang có {p2AcceptedDiscs.length} thuộc tính dùng mã Ưu tiên 2 theo xác nhận trước đó. Bạn có thể bấm nút bên phải để khôi phục tất cả về Ưu tiên 1 chuẩn.</>
+                        ) : (
+                          <>Phân loại theo dạng mã PIM (TSKT vs Filter). Mặc định luôn áp dụng mã Ưu tiên 1.</>
+                        )}
+                      </div>
+                    </div>
+                  </div>
 
-              {onGoToMapping && (
-                <button
-                  onClick={onGoToMapping}
-                  className="btn btn-warning"
-                  style={{ padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700 }}
-                >
-                  <span>Quy Tắc</span>
-                  <ArrowRight size={13} />
-                </button>
-              )}
-            </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    {onResetAllDiscrepanciesToP1 && hasP2Accepted && (
+                      <button
+                        type="button"
+                        onClick={onResetAllDiscrepanciesToP1}
+                        className="btn"
+                        style={{
+                          padding: '5px 12px',
+                          fontSize: '0.78rem',
+                          fontWeight: 700,
+                          background: '#fffbeb',
+                          border: '1.5px solid #f59e0b',
+                          color: '#b45309',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '6px',
+                          boxShadow: '0 1px 2px rgba(245, 158, 11, 0.15)'
+                        }}
+                        title="Khôi phục toàn bộ các thuộc tính chênh lệch về Ưu tiên 1 mặc định"
+                      >
+                        <RotateCcw size={13} />
+                        <span>Khôi phục về Ưu tiên 1</span>
+                      </button>
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => setIsDiscrepancyBannerExpanded(!isDiscrepancyBannerExpanded)}
+                      className="btn"
+                      style={{
+                        padding: '5px 12px',
+                        fontSize: '0.78rem',
+                        fontWeight: 700,
+                        background: isDiscrepancyBannerExpanded ? '#eff6ff' : '#ffffff',
+                        border: '1px solid #bfdbfe',
+                        color: '#1d4ed8',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px'
+                      }}
+                    >
+                      <span>{isDiscrepancyBannerExpanded ? 'Thu gọn' : `Xem chi tiết (${transformationResult.discrepancies.length})`}</span>
+                      {isDiscrepancyBannerExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                    </button>
+
+                    {onGoToMapping && (
+                      <button
+                        onClick={onGoToMapping}
+                        className="btn btn-secondary"
+                        style={{ padding: '5px 12px', fontSize: '0.78rem', fontWeight: 700, borderColor: '#bfdbfe', color: '#1d4ed8' }}
+                      >
+                        <span>Quy Tắc</span>
+                        <ArrowRight size={13} />
+                      </button>
+                    )}
+                  </div>
+                </>
+              );
+            })()}
           </div>
+
+          {/* Dual-role properties notice (TSKT & Filter dùng chung mã CMS) */}
+          {transformationResult?.dualPurposeProperties?.length > 0 && (
+            <div style={{
+              marginTop: '10px',
+              padding: '8px 12px',
+              background: '#f5f3ff',
+              border: '1px solid #ddd6fe',
+              borderRadius: '8px',
+              fontSize: '0.75rem',
+              color: '#5b21b6'
+            }}>
+              <div style={{ fontWeight: 700, marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <span>🔄 Thông báo: Có {transformationResult.dualPurposeProperties.length} mã thuộc tính CMS được dùng chung cho cả TSKT và Filter:</span>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                {transformationResult.dualPurposeProperties.map((dp, dpIdx) => (
+                  <div key={dpIdx} style={{ fontSize: '0.74rem', color: '#6d28d9' }}>
+                    • Mã CMS <b>{dp.cmsPropertyId}</b> ({dp.cmsPropertyName}): Dùng cho TSKT [<code>{dp.tsktCodes.join(', ')}</code>] và Filter [<code>{dp.filterCodes.join(', ')}</code>]
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Interactive Discrepancy Quick Switcher */}
           {isDiscrepancyBannerExpanded && (
-            <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #fed7aa', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #dbeafe', display: 'flex', flexDirection: 'column', gap: '10px' }}>
               {transformationResult.discrepancies.map((disc, dIdx) => {
                 const isUsingP2 = disc.appliedSource === 'priority2' || disc.resolvedChoice === 'priority2';
                 const p1Code = disc.priority1.cmsPropertyId;
                 const p2Code = disc.priority2.cmsPropertyId;
+                const isFilterAttr = disc.pimAttributeCode.includes('filter');
 
                 return (
                   <div key={dIdx} style={{
-                    background: isUsingP2 ? '#f0fdf4' : '#f8fafc',
+                    background: isUsingP2 ? '#f0fdf4' : '#ffffff',
                     border: isUsingP2 ? '1.5px solid #86efac' : '1.5px solid #bfdbfe',
                     padding: '12px 16px',
                     borderRadius: '10px',
@@ -575,7 +743,7 @@ export default function PreviewTraceTab({
                     justifyContent: 'space-between',
                     gap: '14px',
                     flexWrap: 'wrap',
-                    boxShadow: isUsingP2 ? '0 1px 3px rgba(16,185,129,0.08)' : '0 1px 3px rgba(37,99,235,0.08)',
+                    boxShadow: isUsingP2 ? '0 1px 3px rgba(16,185,129,0.08)' : '0 1px 3px rgba(37,99,235,0.06)',
                     transition: 'all 0.2s ease'
                   }}>
                     {/* Left: Attribute Label & Code & Category */}
@@ -586,6 +754,17 @@ export default function PreviewTraceTab({
                       <code style={{ fontSize: '0.76rem', color: '#2563eb', background: '#eff6ff', padding: '2px 7px', borderRadius: '4px', fontFamily: 'var(--font-mono)', border: '1px solid #dbeafe' }}>
                         {disc.pimAttributeCode}
                       </code>
+                      <span style={{
+                        fontSize: '0.68rem',
+                        padding: '2px 7px',
+                        borderRadius: '5px',
+                        background: isFilterAttr ? '#ecfdf5' : '#eff6ff',
+                        color: isFilterAttr ? '#047857' : '#1d4ed8',
+                        border: `1px solid ${isFilterAttr ? '#a7f3d0' : '#bfdbfe'}`,
+                        fontWeight: 700
+                      }}>
+                        {disc.pimAttributeKind || (isFilterAttr ? 'Filter' : 'TSKT')}
+                      </span>
                       <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
                         (Ngành {disc.cmsCategoryId}{disc.cmsCategoryName ? ` - ${disc.cmsCategoryName}` : ''})
                       </span>
@@ -605,7 +784,7 @@ export default function PreviewTraceTab({
                           gap: '4px'
                         }}>
                           <Check size={12} strokeWidth={3} />
-                          <span>Đang dùng: <b>Ưu tiên 2 (CMS: {p2Code})</b></span>
+                          <span>Đang dùng: <b>Ưu tiên 2 (ID: {p2Code})</b></span>
                         </span>
                       ) : (
                         <span style={{
@@ -621,7 +800,7 @@ export default function PreviewTraceTab({
                           gap: '4px'
                         }}>
                           <Check size={12} strokeWidth={3} />
-                          <span>Đang dùng: <b>Ưu tiên 1 (File: {p1Code})</b></span>
+                          <span>Đang dùng: <b>Ưu tiên 1 (ID: {p1Code})</b></span>
                         </span>
                       )}
                     </div>
@@ -659,7 +838,7 @@ export default function PreviewTraceTab({
                         {!isUsingP2 ? (
                           <>
                             <Check size={13} strokeWidth={3} />
-                            <span>✔ Ưu tiên 1 ({p1Code})</span>
+                            <span>Ưu tiên 1 ({p1Code})</span>
                           </>
                         ) : (
                           <span>Ưu tiên 1 ({p1Code})</span>
@@ -697,7 +876,7 @@ export default function PreviewTraceTab({
                         {isUsingP2 ? (
                           <>
                             <Check size={13} strokeWidth={3} />
-                            <span>✔ Ưu tiên 2 ({p2Code})</span>
+                            <span>Ưu tiên 2 ({p2Code})</span>
                           </>
                         ) : (
                           <span>⚡ Chọn Ưu tiên 2 ({p2Code})</span>
@@ -718,66 +897,56 @@ export default function PreviewTraceTab({
         {/* Navigation Tabs and Search */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', marginBottom: '18px' }}>
           
-          <div style={{ display: 'flex', gap: '8px' }}>
-            <button
-              onClick={() => setActiveSubTab('valid')}
-              className="btn"
-              style={{
-                background: activeSubTab === 'valid' ? 'var(--accent-primary)' : '#ffffff',
-                border: '1px solid ' + (activeSubTab === 'valid' ? 'var(--accent-primary)' : 'var(--border-subtle)'),
-                color: activeSubTab === 'valid' ? '#ffffff' : 'var(--text-main)',
-                fontSize: '0.82rem',
-                whiteSpace: 'nowrap',
-                boxShadow: activeSubTab === 'valid' ? 'var(--shadow-sm)' : 'none'
-              }}
-            >
-              <CheckCircle2 size={15} />
-              <span>Dòng Import Hợp Lệ ({validImportRows.length})</span>
-            </button>
-
-            <button
-              onClick={() => setActiveSubTab('hold')}
-              className="btn"
-              style={{
-                background: activeSubTab === 'hold' ? '#ef4444' : '#ffffff',
-                border: '1px solid ' + (activeSubTab === 'hold' ? '#ef4444' : 'var(--border-subtle)'),
-                color: activeSubTab === 'hold' ? '#ffffff' : 'var(--text-main)',
-                fontSize: '0.82rem',
-                whiteSpace: 'nowrap',
-                boxShadow: activeSubTab === 'hold' ? 'var(--shadow-sm)' : 'none'
-              }}
-            >
-              <AlertCircle size={15} />
-              <span>Bị Giữ Lại ({holdRows.length})</span>
-            </button>
-
-            <button
-              onClick={() => setActiveSubTab('proposals')}
-              className="btn"
-              style={{
-                background: activeSubTab === 'proposals' ? '#0284c7' : '#ffffff',
-                border: '1px solid ' + (activeSubTab === 'proposals' ? '#0284c7' : 'var(--border-subtle)'),
-                color: activeSubTab === 'proposals' ? '#ffffff' : 'var(--text-main)',
-                fontSize: '0.82rem',
-                whiteSpace: 'nowrap',
-                boxShadow: activeSubTab === 'proposals' ? 'var(--shadow-sm)' : 'none'
-              }}
-            >
-              <Sparkles size={15} />
-              <span>Đề Xuất Tạo Mới ({proposals.length})</span>
-            </button>
+          {/* Current view indicator */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <div style={{ fontSize: '0.92rem', fontWeight: 700, color: 'var(--text-main)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              {activeSubTab === 'valid' && (
+                <>
+                  <CheckCircle2 size={16} color="#059669" />
+                  <span>Dòng Import Hợp Lệ</span>
+                  <span style={{ fontSize: '0.76rem', fontWeight: 600, color: '#059669', background: '#ecfdf5', padding: '2px 8px', borderRadius: '12px', border: '1px solid #a7f3d0' }}>
+                    {validImportRows.length} dòng CMS
+                  </span>
+                </>
+              )}
+              {activeSubTab === 'hold' && (
+                <>
+                  <AlertCircle size={16} color="#dc2626" />
+                  <span>Cần xử lý</span>
+                  <span style={{ fontSize: '0.76rem', fontWeight: 600, color: '#dc2626', background: '#fef2f2', padding: '2px 8px', borderRadius: '12px', border: '1px solid #fecaca' }}>
+                    {holdRows.length} dòng
+                  </span>
+                </>
+              )}
+              {activeSubTab === 'proposals' && (
+                <>
+                  <Sparkles size={16} color="#2563eb" />
+                  <span>Đề Xuất Tạo Mới</span>
+                  <span style={{ fontSize: '0.76rem', fontWeight: 600, color: '#2563eb', background: '#eff6ff', padding: '2px 8px', borderRadius: '12px', border: '1px solid #bfdbfe' }}>
+                    {proposals.length} giá trị
+                  </span>
+                </>
+              )}
+            </div>
           </div>
 
           {/* Search & Filter */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-            <div style={{ position: 'relative', width: '220px' }}>
-              <Search size={15} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-dim)' }} />
+            <div style={{ position: 'relative', width: '230px' }}>
+              <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
               <input
                 type="text"
                 placeholder="Tìm ProductID, PropertyID, Value, PIM..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                style={{ width: '100%', paddingLeft: '32px' }}
+                style={{ 
+                  width: '100%', 
+                  paddingLeft: '32px',
+                  color: '#475569',
+                  background: '#ffffff',
+                  border: '1px solid #e2e8f0',
+                  fontSize: '0.82rem'
+                }}
               />
             </div>
 
@@ -826,7 +995,8 @@ export default function PreviewTraceTab({
               <select
                 value={propertyFilter}
                 onChange={e => setPropertyFilter(e.target.value)}
-                style={{ maxWidth: '200px' }}
+                style={{ minWidth: '260px', maxWidth: '380px' }}
+                title="Lọc hiển thị theo từng thuộc tính CMS"
               >
                 <option value="ALL">Tất cả thuộc tính CMS ({distinctProperties.length})</option>
                 {distinctProperties.map((p, i) => (
@@ -1097,17 +1267,31 @@ export default function PreviewTraceTab({
                             </span>
                           )}
 
+                          {row.trace.isDualRole && (
+                            <span style={{ 
+                              fontSize: '0.65rem', 
+                              color: '#6d28d9', 
+                              background: '#f5f3ff', 
+                              border: '1px solid #ddd6fe', 
+                              padding: '2px 6px', 
+                              borderRadius: '4px', 
+                              fontWeight: 600 
+                            }} title="Mã CMS này được dùng chung cho cả TSKT và Filter">
+                              🔄 TSKT & Filter
+                            </span>
+                          )}
+
                           {row.trace.hasDiscrepancy && row.trace.source !== 'priority2_accepted' && !row.trace.isUserConfirmedP2 && row.trace.source !== 'priority1_accepted' && !row.trace.isUserConfirmedP1 && (
                             <span style={{ 
                               fontSize: '0.65rem', 
-                              color: '#b45309', 
-                              background: '#fffbeb', 
-                              border: '1.5px solid #f59e0b', 
+                              color: '#1d4ed8', 
+                              background: '#eff6ff', 
+                              border: '1px solid #bfdbfe', 
                               padding: '2px 6px', 
                               borderRadius: '4px', 
-                              fontWeight: 700 
-                            }} title="Lệch mã với CMS (đang giữ Ưu tiên 1)">
-                              ⚠️ Lệch mã CMS
+                              fontWeight: 600 
+                            }} title="Có mã CMS gợi ý khác (đang giữ Ưu tiên 1)">
+                              💡 Có gợi ý CMS
                             </span>
                           )}
                         </div>
@@ -1476,18 +1660,75 @@ export default function PreviewTraceTab({
                           </div>
                         ) : (
                           /* Case 3: Các lý do khác */
-                          <div>
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>
+                            {h.smartSuggestion ? (
+                              <div style={{
+                                padding: '5px 8px',
+                                background: '#f0fdf4',
+                                border: '1px solid #bbf7d0',
+                                borderRadius: '6px',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '3px'
+                              }}>
+                                <div style={{ fontSize: '0.72rem', color: '#166534', fontWeight: 600 }}>
+                                  💡 Gợi ý CMS: <b style={{ color: '#15803d' }}>"{h.smartSuggestion.valName}"</b> (Mã: {h.smartSuggestion.valId})
+                                </div>
+                                <div style={{ fontSize: '0.68rem', color: '#475569' }}>
+                                  {h.smartSuggestion.reason}
+                                </div>
+                                {onAcceptValueSuggestion && (
+                                  <button
+                                    type="button"
+                                    onClick={() => onAcceptValueSuggestion({
+                                      cmsCategoryId: h.cmsCategoryId,
+                                      cmsPropertyId: h.cmsPropertyId,
+                                      rawText: h.rawValue,
+                                      smartSuggestion: h.smartSuggestion
+                                    })}
+                                    className="btn"
+                                    style={{
+                                      padding: '3px 8px',
+                                      fontSize: '0.72rem',
+                                      fontWeight: 600,
+                                      background: '#16a34a',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      borderRadius: '4px',
+                                      marginTop: '2px',
+                                      cursor: 'pointer',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '4px',
+                                      width: 'fit-content'
+                                    }}
+                                  >
+                                    <Check size={12} />
+                                    <span>Dùng giá trị CMS này</span>
+                                  </button>
+                                )}
+                              </div>
+                            ) : null}
+
                             {h.reason.includes('Chưa có trên CMS') ? (
                               <span 
                                 className="badge badge-info" 
-                                style={{ fontSize: '0.74rem', cursor: 'pointer', padding: '3px 8px' }} 
-                                onClick={() => setActiveSubTab('proposals')}
-                                title="Bấm để chuyển sang tab Đề Xuất Tạo Mới trên CMS"
+                                style={{ fontSize: '0.74rem', cursor: 'pointer', padding: '4px 10px', display: 'inline-flex', alignItems: 'center', gap: '4px', width: 'fit-content' }} 
+                                onClick={() => {
+                                  setFocusedProposalTarget({
+                                    propertyName: h.cmsPropertyName || h.pimAttributeCode,
+                                    pimAttributeCode: h.pimAttributeCode,
+                                    cmsPropertyId: h.cmsPropertyId,
+                                    rawValue: h.rawValue
+                                  });
+                                  setActiveSubTab('proposals');
+                                }}
+                                title="Bấm để chuyển sang tab Đề Xuất Tạo Mới và lọc đúng giá trị này"
                               >
                                 ➔ Xem tab Đề Xuất CMS
                               </span>
                             ) : (
-                              <span className="badge badge-warning" style={{ fontSize: '0.74rem' }}>
+                              <span className="badge badge-warning" style={{ fontSize: '0.74rem', width: 'fit-content' }}>
                                 {h.reason}
                               </span>
                             )}
@@ -1581,6 +1822,53 @@ export default function PreviewTraceTab({
         {/* Subtab Content 3: Proposals for CMS */}
         {activeSubTab === 'proposals' && (
           <div>
+            {/* Targeted Proposal Filter Banner (When navigating from hold row) */}
+            {focusedProposalTarget && (
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '10px 16px',
+                background: '#ecfdf5',
+                border: '1.5px solid #a7f3d0',
+                borderRadius: '10px',
+                marginBottom: '14px',
+                flexWrap: 'wrap',
+                gap: '10px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <div style={{ width: '28px', height: '28px', borderRadius: '7px', background: '#d1fae5', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#059669' }}>
+                    <Sparkles size={15} />
+                  </div>
+                  <div style={{ fontSize: '0.84rem', color: '#065f46' }}>
+                    <span>Đang lọc đề xuất cho thuộc tính: </span>
+                    <b style={{ color: '#047857' }}>{focusedProposalTarget.propertyName}</b>
+                    {focusedProposalTarget.pimAttributeCode && (
+                      <code style={{ marginLeft: '6px', fontSize: '0.74rem', background: '#ffffff', padding: '2px 7px', borderRadius: '4px', border: '1px solid #a7f3d0', color: '#047857' }}>
+                        {focusedProposalTarget.pimAttributeCode}
+                      </code>
+                    )}
+                    {focusedProposalTarget.rawValue && (
+                      <span style={{ marginLeft: '8px' }}>
+                        với giá trị: <b style={{ background: '#fef3c7', padding: '2px 8px', borderRadius: '4px', border: '1px solid #fde68a', color: '#b45309' }}>{focusedProposalTarget.rawValue}</b>
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setFocusedProposalTarget(null)}
+                  className="btn btn-secondary"
+                  style={{ padding: '5px 12px', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                  title="Bấm để xem danh sách toàn bộ tất cả đề xuất tạo mới"
+                >
+                  <X size={13} />
+                  <span>Hiện toàn bộ ({proposals.length} đề xuất)</span>
+                </button>
+              </div>
+            )}
+
             <div style={{
               padding: '10px 16px',
               background: '#eff6ff',
@@ -1594,7 +1882,11 @@ export default function PreviewTraceTab({
               gap: '10px'
             }}>
               <div style={{ fontSize: '0.86rem', color: '#1e40af', fontWeight: 700 }}>
-                Đề xuất tạo mới ({proposals.length} giá trị)
+                {focusedProposalTarget ? (
+                  <span>Kết quả lọc đề xuất ({displayedProposals.length} / {proposals.length} giá trị)</span>
+                ) : (
+                  <span>Đề xuất tạo mới ({displayedProposals.length} giá trị)</span>
+                )}
               </div>
 
               {proposals.length > 0 && (
@@ -1610,6 +1902,118 @@ export default function PreviewTraceTab({
               )}
             </div>
 
+            {/* AI Smart Value Suggestions Hero Banner */}
+            {displayedProposals.filter(p => p.smartSuggestion && p.smartSuggestion.valId).length > 0 && (
+              <div style={{
+                padding: '12px 18px',
+                background: 'linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%)',
+                border: '1.5px solid #86efac',
+                borderRadius: '10px',
+                marginBottom: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px',
+                boxShadow: '0 2px 8px rgba(16, 185, 129, 0.08)'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                  <div style={{ width: '32px', height: '32px', borderRadius: '8px', background: '#dcfce7', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#16a34a', flexShrink: 0 }}>
+                    <Sparkles size={18} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#15803d' }}>
+                      AI phát hiện {displayedProposals.filter(p => p.smartSuggestion && p.smartSuggestion.valId).length} giá trị có sẵn trên CMS tương ứng!
+                    </div>
+                    <div style={{ fontSize: '0.76rem', color: '#166534', marginTop: '2px' }}>
+                      Các giá trị này chỉ khác cách trình bày (dấu chấm phân cách, khoảng trắng, đơn vị). Dùng giá trị có sẵn sẽ giúp sản phẩm hiển thị chuẩn trên Bộ lọc website thay vì tạo mới.
+                    </div>
+                  </div>
+                </div>
+
+                {onAcceptAllValueSuggestions && (
+                  <button
+                    type="button"
+                    onClick={() => onAcceptAllValueSuggestions(displayedProposals.filter(p => p.smartSuggestion && p.smartSuggestion.valId))}
+                    className="btn"
+                    style={{
+                      padding: '7px 15px',
+                      fontSize: '0.8rem',
+                      fontWeight: 650,
+                      background: '#16a34a',
+                      color: '#ffffff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      boxShadow: '0 2px 6px rgba(22, 163, 74, 0.25)'
+                    }}
+                    title="Tự động áp dụng tất cả các giá trị gợi ý có độ khớp cao vào file import"
+                  >
+                    <CheckCheck size={15} />
+                    <span>Áp dụng tất cả gợi ý ({displayedProposals.filter(p => p.smartSuggestion && p.smartSuggestion.valId).length})</span>
+                  </button>
+                )}
+              </div>
+            )}
+
+            {/* List of currently accepted value mappings */}
+            {Object.keys(valueMappings || {}).length > 0 && (
+              <div style={{
+                padding: '10px 14px',
+                background: '#ffffff',
+                border: '1px solid #e2e8f0',
+                borderRadius: '8px',
+                marginBottom: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '8px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                  <span style={{ fontSize: '0.78rem', fontWeight: 650, color: '#334155' }}>
+                    Đã dùng gợi ý CMS ({Object.keys(valueMappings).length} giá trị):
+                  </span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {Object.values(valueMappings).slice(0, 6).map(vm => (
+                      <span 
+                        key={vm.key || vm.rawText}
+                        style={{
+                          fontSize: '0.72rem',
+                          background: '#eff6ff',
+                          border: '1px solid #bfdbfe',
+                          color: '#1d4ed8',
+                          borderRadius: '5px',
+                          padding: '2px 8px',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: '5px'
+                        }}
+                      >
+                        <span>{vm.rawText} ➔ <b>{vm.valName}</b> ({vm.valId})</span>
+                        {onRemoveValueMapping && (
+                          <X 
+                            size={12} 
+                            style={{ cursor: 'pointer', color: '#64748b' }} 
+                            onClick={() => onRemoveValueMapping(vm.key, vm.rawText)}
+                            title="Hủy ánh xạ này để đưa lại về đề xuất tạo mới"
+                          />
+                        )}
+                      </span>
+                    ))}
+                    {Object.keys(valueMappings).length > 6 && (
+                      <span style={{ fontSize: '0.72rem', color: '#64748b', alignSelf: 'center' }}>
+                        +{Object.keys(valueMappings).length - 6} mục khác
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="table-scroll-container">
               <table className="custom-table">
               <thead>
@@ -1618,29 +2022,158 @@ export default function PreviewTraceTab({
                   <th style={{ whiteSpace: 'nowrap' }}>CMS PROPERTYID</th>
                   <th style={{ whiteSpace: 'nowrap' }}>Tên Thuộc Tính CMS</th>
                   <th style={{ whiteSpace: 'nowrap' }}>Thuộc Tính PIM</th>
-                  <th style={{ whiteSpace: 'nowrap' }}>Giá Trị Cần Tạo Mới Trên CMS</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>Giá Trị PIM</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>Gợi Ý Khớp Thông Minh (AI Smart Match)</th>
+                  <th style={{ whiteSpace: 'nowrap' }}>Thao Tác</th>
                   <th style={{ whiteSpace: 'nowrap' }}>Số Lần</th>
                   <th>Ví Dụ Model Bị Thiếu</th>
                 </tr>
               </thead>
               <tbody>
-                {proposals.map((p, idx) => (
-                  <tr key={idx}>
-                    <td style={{ whiteSpace: 'nowrap' }}>{p.cmsCategoryId} - {p.cmsCategoryName}</td>
-                    <td style={{ whiteSpace: 'nowrap' }}><code style={{ fontFamily: 'var(--font-mono)', color: '#059669' }}>{p.cmsPropertyId}</code></td>
-                    <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{p.cmsPropertyName}</td>
-                    <td style={{ whiteSpace: 'nowrap' }}><code style={{ color: '#4f46e5', fontFamily: 'var(--font-mono)' }}>{p.pimAttributeCode}</code></td>
-                    <td style={{ whiteSpace: 'nowrap' }}>
-                      <b style={{ color: '#b45309', background: '#fef3c7', border: '1px solid #fde68a', padding: '2px 8px', borderRadius: '4px', whiteSpace: 'nowrap' }}>
-                        {p.rawText}
-                      </b>
-                    </td>
-                    <td style={{ whiteSpace: 'nowrap' }}><span className="badge badge-info" style={{ whiteSpace: 'nowrap' }}>{p.count} lần</span></td>
-                    <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
-                      {(p.sampleModels || []).join(', ')}
+                {displayedProposals.length === 0 ? (
+                  <tr>
+                    <td colSpan={9} style={{ textAlign: 'center', padding: '30px', color: 'var(--text-muted)' }}>
+                      Không có đề xuất nào khớp với bộ lọc hiện tại.
+                      {focusedProposalTarget && (
+                        <div style={{ marginTop: '8px' }}>
+                          <button
+                            type="button"
+                            onClick={() => setFocusedProposalTarget(null)}
+                            className="btn btn-secondary"
+                            style={{ fontSize: '0.78rem', padding: '4px 10px' }}
+                          >
+                            Xem tất cả đề xuất
+                          </button>
+                        </div>
+                      )}
                     </td>
                   </tr>
-                ))}
+                ) : (
+                  displayedProposals.map((p, idx) => {
+                    const isTargetMatch = focusedProposalTarget && (
+                      (p.rawText && focusedProposalTarget.rawValue && p.rawText.trim().toLowerCase() === focusedProposalTarget.rawValue.trim().toLowerCase()) ||
+                      (p.pimAttributeCode && focusedProposalTarget.pimAttributeCode && p.pimAttributeCode.trim().toLowerCase() === focusedProposalTarget.pimAttributeCode.trim().toLowerCase())
+                    );
+
+                    return (
+                      <tr key={idx} style={{ background: isTargetMatch ? '#fefce8' : 'transparent', transition: 'background 0.15s ease' }}>
+                        <td style={{ whiteSpace: 'nowrap' }}>{p.cmsCategoryId} - {p.cmsCategoryName}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}><code style={{ fontFamily: 'var(--font-mono)', color: '#059669', fontWeight: 600 }}>{p.cmsPropertyId}</code></td>
+                        <td style={{ fontWeight: 600, whiteSpace: 'nowrap' }}>{p.cmsPropertyName}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}><code style={{ color: '#4f46e5', fontFamily: 'var(--font-mono)' }}>{p.pimAttributeCode}</code></td>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <b style={{ 
+                              color: '#b45309', 
+                              background: isTargetMatch ? '#fef08a' : '#fef3c7', 
+                              border: isTargetMatch ? '1.5px solid #eab308' : '1px solid #fde68a', 
+                              padding: '3px 9px', 
+                              borderRadius: '5px', 
+                              whiteSpace: 'nowrap' 
+                            }}>
+                              {p.rawText}
+                            </b>
+                            {p.isFilterAttribute && (
+                              <span style={{
+                                fontSize: '0.64rem',
+                                fontWeight: 700,
+                                padding: '1px 5px',
+                                borderRadius: '4px',
+                                background: '#f3e8ff',
+                                color: '#7e22ce',
+                                border: '1px solid #d8b4fe',
+                                whiteSpace: 'nowrap'
+                              }}>
+                                Filter
+                              </span>
+                            )}
+                          </div>
+                        </td>
+
+                        {/* Cột Gợi Ý Khớp Thông Minh (AI Smart Match) */}
+                        <td>
+                          {p.smartSuggestion ? (
+                            <div style={{
+                              padding: '5px 8px',
+                              background: '#f0fdf4',
+                              border: '1px solid #bbf7d0',
+                              borderRadius: '7px',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '2px',
+                              minWidth: '220px'
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#15803d' }}>
+                                  "{p.smartSuggestion.valName}"
+                                </span>
+                                <code style={{ fontSize: '0.72rem', background: '#dcfce7', padding: '1px 5px', borderRadius: '4px', color: '#166534', fontWeight: 600 }}>
+                                  ID: {p.smartSuggestion.valId}
+                                </code>
+                                <span style={{
+                                  fontSize: '0.64rem',
+                                  fontWeight: 700,
+                                  color: '#15803d',
+                                  background: '#dcfce7',
+                                  border: '1px solid #86efac',
+                                  borderRadius: '4px',
+                                  padding: '1px 4px'
+                                }}>
+                                  {Math.round(p.smartSuggestion.confidence * 100)}% khớp
+                                </span>
+                              </div>
+                              <div style={{ fontSize: '0.7rem', color: '#475569' }}>
+                                {p.smartSuggestion.reason}
+                              </div>
+                            </div>
+                          ) : (
+                            <span style={{ fontSize: '0.74rem', color: '#94a3b8', fontStyle: 'italic' }}>
+                              Chưa có giá trị CMS tương tự
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Cột Thao Tác (Dùng giá trị này / Tạo mới) */}
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          {p.smartSuggestion && onAcceptValueSuggestion ? (
+                            <button
+                              type="button"
+                              onClick={() => onAcceptValueSuggestion(p)}
+                              className="btn"
+                              style={{
+                                padding: '4px 10px',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                background: '#16a34a',
+                                color: '#ffffff',
+                                border: 'none',
+                                borderRadius: '6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                cursor: 'pointer',
+                                boxShadow: '0 1px 3px rgba(22, 163, 74, 0.2)'
+                              }}
+                              title={`Áp dụng mã CMS ${p.smartSuggestion.valId} ("${p.smartSuggestion.valName}") cho "${p.rawText}"`}
+                            >
+                              <Check size={13} strokeWidth={2.5} />
+                              <span>Dùng giá trị này</span>
+                            </button>
+                          ) : (
+                            <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                              Tạo mới CMS
+                            </span>
+                          )}
+                        </td>
+
+                        <td style={{ whiteSpace: 'nowrap' }}><span className="badge badge-info" style={{ whiteSpace: 'nowrap' }}>{p.count} lần</span></td>
+                        <td style={{ fontSize: '0.78rem', color: 'var(--text-muted)' }}>
+                          {(p.sampleModels || []).join(', ')}
+                        </td>
+                      </tr>
+                    );
+                  })
+                )}
               </tbody>
             </table>
             </div>
@@ -1803,7 +2336,7 @@ export default function PreviewTraceTab({
                               {!isModalP2 ? (
                                 <>
                                   <Check size={12} strokeWidth={3} />
-                                  <span>✔ Đang chọn: Ưu tiên 1 ({p1Code})</span>
+                                  <span>Đang chọn: Ưu tiên 1 ({p1Code})</span>
                                 </>
                               ) : (
                                 <span>📁 Chuyển sang Ưu tiên 1 ({p1Code})</span>
@@ -1845,7 +2378,7 @@ export default function PreviewTraceTab({
                               {isModalP2 ? (
                                 <>
                                   <Check size={12} strokeWidth={3} />
-                                  <span>✔ Đang chọn: Ưu tiên 2 ({p2Code})</span>
+                                  <span>Đang chọn: Ưu tiên 2 ({p2Code})</span>
                                 </>
                               ) : (
                                 <span>⚡ Chuyển sang Ưu tiên 2 ({p2Code})</span>
@@ -1905,11 +2438,7 @@ export default function PreviewTraceTab({
       )}
 
       {/* Bottom Bar: Proceed to export */}
-      <div className="glass-panel" style={{ padding: '16px 24px', marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '16px' }}>
-        <div style={{ fontSize: '0.84rem', color: 'var(--text-muted)' }}>
-          Đã kiểm tra xong tính toàn vẹn và đường đi dữ liệu. Chuyển sang bước cấu hình thông tin người dùng và xuất file.
-        </div>
-
+      <div className="glass-panel" style={{ padding: '16px 24px', marginTop: '24px', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap', gap: '16px' }}>
         <button
           onClick={onProceedToExport}
           className="btn btn-primary"

@@ -206,7 +206,7 @@ export function parsePIMProductFile(worksheet, fileName = '') {
   }
 
   const detectedCategoryCodes = Array.from(new Set(products.map(p => p.category_code).filter(Boolean)));
-  const distinctModels = new Set(products.map(p => p.model_code).filter(Boolean)).size;
+  const distinctModels = new Set(products.map(p => p.model_code || p.cms_product_id).filter(Boolean)).size;
   const distinctCmsIds = new Set(products.map(p => p.cms_product_id).filter(Boolean)).size;
 
   return {

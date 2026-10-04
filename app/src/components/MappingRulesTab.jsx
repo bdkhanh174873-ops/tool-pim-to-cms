@@ -231,17 +231,17 @@ export default function MappingRulesTab({
         </div>
       </div>
 
-      {/* Discrepancies Warning Banner - Single or Multiple */}
+      {/* Thông Báo Đối Soát Mã - Gợi ý CMS */}
       {discrepancies.length > 0 && (
-        <div className="glass-panel" style={{ padding: '14px 18px', marginBottom: '18px', borderColor: '#fde68a', background: '#fffef5' }}>
+        <div className="glass-panel" style={{ padding: '14px 18px', marginBottom: '18px', borderColor: '#bfdbfe', background: '#f8fafc' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px', marginBottom: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <ShieldAlert size={16} color="#d97706" />
-              <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#92400e' }}>
-                Lệch mã giữa Ưu tiên 1 và Ưu tiên 2 ({discrepancies.length})
+              <Info size={16} color="#2563eb" />
+              <span style={{ fontSize: '0.86rem', fontWeight: 700, color: '#1e40af' }}>
+                Thông báo đối soát: Có {discrepancies.length} thuộc tính có mã CMS gợi ý khác (Mặc định giữ Ưu tiên 1)
               </span>
             </div>
-            <span style={{ fontSize: '0.72rem', color: '#b45309', background: '#fef3c7', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>
+            <span style={{ fontSize: '0.72rem', color: '#1d4ed8', background: '#eff6ff', border: '1px solid #bfdbfe', padding: '2px 8px', borderRadius: '6px', fontWeight: 600 }}>
               Mặc định giữ Ưu tiên 1
             </span>
           </div>
@@ -304,7 +304,7 @@ export default function MappingRulesTab({
                           background: '#fff', color: '#1e40af', border: '1.5px dashed #93c5fd', fontWeight: 600
                         })
                       }}>
-                      {!isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>✔ P1: {p1Code}</span></> : <span>📁 Chọn P1: {p1Code}</span>}
+                      {!isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>P1: {p1Code}</span></> : <span>📁 Chọn P1: {p1Code}</span>}
                     </button>
                     <button type="button" onClick={() => handleSelectDiscrepancyCode(disc, p2Code, true)}
                       style={{
@@ -317,7 +317,7 @@ export default function MappingRulesTab({
                           background: '#fff', color: '#065f46', border: '1.5px dashed #86efac', fontWeight: 600
                         })
                       }}>
-                      {isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>✔ P2: {p2Code}</span></> : <span>⚡ Chọn P2: {p2Code}</span>}
+                      {isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>P2: {p2Code}</span></> : <span>⚡ Chọn P2: {p2Code}</span>}
                     </button>
                   </div>
                 </div>
@@ -596,7 +596,7 @@ export default function MappingRulesTab({
                           background: '#fff', color: '#1e40af', border: '1.5px dashed #93c5fd', fontWeight: 600
                         })
                       }}>
-                      {!isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>✔ P1: {p1Code}</span></> : <span>📁 Chọn P1: {p1Code}</span>}
+                      {!isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>P1: {p1Code}</span></> : <span>📁 Chọn P1: {p1Code}</span>}
                     </button>
                     <button type="button" onClick={() => handleSelectDiscrepancyCode(disc, p2Code, true)}
                       style={{
@@ -609,7 +609,7 @@ export default function MappingRulesTab({
                           background: '#fff', color: '#065f46', border: '1.5px dashed #86efac', fontWeight: 600
                         })
                       }}>
-                      {isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>✔ P2: {p2Code}</span></> : <span>⚡ Chọn P2: {p2Code}</span>}
+                      {isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>P2: {p2Code}</span></> : <span>⚡ Chọn P2: {p2Code}</span>}
                     </button>
                   </div>
                 </div>

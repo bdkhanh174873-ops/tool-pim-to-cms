@@ -234,6 +234,45 @@ export default function DataPreviewModal({
     return [];
   }, [fileType, data]);
 
+  // Helper to extract Vietnamese name and technical code for PIM columns
+  const getPimColumnInfo = (colName) => {
+    if (!colName) return { title: '', code: null };
+    const lower = colName.toLowerCase();
+    if (lower === 'dòng' || colName === 'DÒNG') return { title: 'Dòng Excel', code: 'row_index' };
+    if (lower === 'file nguồn' || colName === 'FILE NGUỒN') return { title: 'File Nguồn', code: 'file_origin' };
+    if (colName.includes('model_id_cms')) return { title: 'ID Sản Phẩm CMS', code: 'model_id_cms' };
+    if (colName.includes('model_code')) return { title: 'Mã Model PIM', code: 'model_code' };
+    if (colName.includes('sku')) return { title: 'Mã SKU', code: 'sku' };
+    if (colName.includes('category_code')) return { title: 'Mã Ngành PIM', code: 'category_code' };
+
+    // Find Vietnamese label:
+    // 1. From data.labelsMap
+    let vn = data?.labelsMap?.[colName];
+
+    // 2. From workingItems[0..20].attrLabels
+    if (!vn && workingItems && workingItems.length > 0) {
+      for (let i = 0; i < Math.min(20, workingItems.length); i++) {
+        if (workingItems[i]?.attrLabels?.[colName]) {
+          vn = workingItems[i].attrLabels[colName];
+          break;
+        }
+      }
+    }
+
+    // 3. From data.headers & data.labels
+    if (!vn && data?.headers && data?.labels) {
+      const idx = data.headers.indexOf(colName);
+      if (idx !== -1 && data.labels[idx]) {
+        vn = data.labels[idx];
+      }
+    }
+
+    return {
+      title: vn || colName,
+      code: vn ? colName : null
+    };
+  };
+
   // Format a row item to cells array for rendering
   const formatItemToCells = (item) => {
     if (!item) return [];
@@ -1006,11 +1045,51 @@ export default function DataPreviewModal({
           ) : (
             <table className="custom-table" style={{ fontSize: '0.8rem', marginTop: '16px' }}>
               <thead>
-                <tr>
-                  <th style={{ width: '50px', textAlign: 'center' }}>STT</th>
-                  {tableHeaders.map((header, idx) => (
-                    <th key={idx}>{header}</th>
-                  ))}
+                <tr style={{ background: '#f8fafc' }}>
+                  <th style={{ width: '50px', textAlign: 'center', color: '#475569', fontWeight: 700, borderRight: '1px solid #e2e8f0', borderBottom: '2px solid #cbd5e1', padding: '10px 14px' }}>STT</th>
+                  {tableHeaders.map((header, idx) => {
+                    if (fileType === 'pimProduct') {
+                      const info = getPimColumnInfo(header);
+                      return (
+                        <th 
+                          key={idx} 
+                          style={{ 
+                            verticalAlign: 'bottom', 
+                            padding: '10px 14px',
+                            borderRight: '1px solid #e2e8f0',
+                            borderBottom: '2px solid #cbd5e1',
+                            background: '#f8fafc',
+                            whiteSpace: 'nowrap',
+                            textTransform: 'none',
+                            letterSpacing: 'normal'
+                          }}
+                        >
+                          <div style={{ 
+                            fontWeight: 700, 
+                            color: '#0f172a', 
+                            fontSize: '0.82rem', 
+                            lineHeight: 1.3,
+                            textTransform: 'none'
+                          }}>
+                            {info.title}
+                          </div>
+                          {info.code && (
+                            <div style={{ 
+                              fontSize: '0.68rem', 
+                              color: '#64748b', 
+                              fontFamily: 'var(--font-mono)', 
+                              fontWeight: 500,
+                              marginTop: '3px',
+                              textTransform: 'none'
+                            }}>
+                              {info.code}
+                            </div>
+                          )}
+                        </th>
+                      );
+                    }
+                    return <th key={idx}>{header}</th>;
+                  })}
                   {isEditable && (
                     <th style={{ width: '110px', textAlign: 'center' }}>Hành Động</th>
                   )}
@@ -1019,14 +1098,36 @@ export default function DataPreviewModal({
               <tbody>
                 {paginatedItems.map(({ item, originalIndex }, rowIdx) => {
                   const cells = formatItemToCells(item);
+                  const isEven = rowIdx % 2 === 1;
 
                   return (
-                    <tr key={originalIndex} style={{ transition: 'background 0.15s ease' }}>
-                      <td style={{ textAlign: 'center', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
+                    <tr 
+                      key={originalIndex} 
+                      style={{ 
+                        background: isEven ? '#f8fafc' : '#ffffff', 
+                        transition: 'background 0.15s ease' 
+                      }}
+                    >
+                      <td style={{ 
+                        textAlign: 'center', 
+                        color: '#64748b', 
+                        fontFamily: 'var(--font-mono)',
+                        borderRight: '1px solid #f1f5f9',
+                        borderBottom: '1px solid #e2e8f0',
+                        padding: '10px 14px'
+                      }}>
                         {(safePage - 1) * pageSize + rowIdx + 1}
                       </td>
                       {cells.map((cell, cIdx) => (
-                        <td key={cIdx}>
+                        <td 
+                          key={cIdx}
+                          style={{
+                            borderRight: '1px solid #f1f5f9',
+                            borderBottom: '1px solid #e2e8f0',
+                            padding: '10px 14px',
+                            color: '#1e293b'
+                          }}
+                        >
                           {cIdx === 0 && fileType === 'cmsCatalog' ? (
                             <b style={{ color: '#b45309', fontFamily: 'var(--font-mono)' }}>{cell}</b>
                           ) : cIdx === 2 && fileType === 'cmsCatalog' ? (
@@ -1045,6 +1146,30 @@ export default function DataPreviewModal({
                             <span style={{ fontWeight: 600, color: '#0f172a' }}>{cell}</span>
                           ) : cIdx === 3 && fileType === 'catMappingRef' ? (
                             <code style={{ color: '#0284c7' }}>{cell}</code>
+                          ) : fileType === 'pimProduct' ? (
+                            cIdx === 0 ? (
+                              <span style={{ fontFamily: 'var(--font-mono)', color: '#475569', fontWeight: 600 }}>#{cell}</span>
+                            ) : cIdx === 1 ? (
+                              <span style={{ fontSize: '0.74rem', color: '#64748b' }}>{cell}</span>
+                            ) : cIdx === 2 ? (
+                              cell && cell !== '(Trống)' ? (
+                                <b style={{ color: '#2563eb', fontFamily: 'var(--font-mono)' }}>{cell}</b>
+                              ) : (
+                                <span style={{ color: '#dc2626', background: '#fee2e2', padding: '2px 6px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600 }}>(Trống ID)</span>
+                              )
+                            ) : cIdx === 3 ? (
+                              <code style={{ color: '#4338ca', fontWeight: 600 }}>{cell}</code>
+                            ) : cIdx === 4 ? (
+                              cell && cell !== '(Không có)' ? <code style={{ color: '#0f172a' }}>{cell}</code> : <span style={{ color: '#cbd5e1' }}>-</span>
+                            ) : cIdx === 5 ? (
+                              <span style={{ color: '#059669', fontWeight: 600 }}>{cell}</span>
+                            ) : (
+                              cell && String(cell).trim() ? (
+                                <span style={{ color: '#0f172a', fontWeight: 500, lineHeight: 1.4 }}>{String(cell)}</span>
+                              ) : (
+                                <span style={{ color: '#cbd5e1' }}>-</span>
+                              )
+                            )
                           ) : (
                             String(cell)
                           )}

@@ -222,6 +222,12 @@ input:focus, select:focus, textarea:focus {
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
 }
 
+input::placeholder, textarea::placeholder {
+  color: #94a3b8;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
 /* Table styling with sticky header row and sticky first column */
 .table-scroll-container {
   max-height: 64vh;
@@ -275,4 +281,18 @@ input:focus, select:focus, textarea:focus {
 }
 .animate-fade-in {
   animation: fadeIn 0.2s ease forwards;
+}
+
+@keyframes slideUpToast {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-toast {
+  animation: slideUpToast 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

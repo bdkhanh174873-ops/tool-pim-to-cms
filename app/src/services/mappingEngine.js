@@ -59,6 +59,175 @@ export const SMART_CODE_KEYWORDS = [
   { code: "maximum_resolution", names: ["độ phân giải tối đa", "độ phân giải"] }
 ];
 
+/**
+ * Rút trích khái niệm kỹ thuật gốc từ mã PIM (bỏ các hậu tố _tskt, _filter, _master, _dmxfilter, _tgddfilter)
+ * Ví dụ: ram_tskt_master -> ram, ram_filter_master -> ram
+ */
+export function getBaseAttrCode(code = '') {
+  return String(code || '')
+    .trim()
+    .toLowerCase()
+    .replace(/_(tskt|filter)(_master)?$/, '')
+    .replace(/_(dmxfilter|tgddfilter)$/, '');
+}
+
+/**
+ * Chuẩn hóa giá trị thông số kỹ thuật để so khớp thông minh:
+ * Tách và nhận diện số (loại bỏ dấu chấm/phẩy phân cách hàng nghìn như 20.000 -> 20000), đơn vị (mAh, W...), ký tự đặc biệt.
+ */
+export function canonicalizeValue(str) {
+  if (str === null || str === undefined) return { raw: '', clean: '', numbers: [], unit: '', compact: '', words: [] };
+
+  const raw = String(str).trim();
+  let clean = raw.toLowerCase();
+
+  // Chuẩn hóa dấu phân cách hàng nghìn (20.000 hoặc 20,000 -> 20000)
+  const normNumbers = clean.replace(/(\d{1,3})[.,](\d{3})(?=\D|$)/g, '$1$2')
+                           .replace(/(\d{1,3})[.,](\d{3})(?=\D|$)/g, '$1$2');
+
+  // Trích xuất các số (số nguyên hoặc số thập phân như 1.8 hoặc 20000)
+  const numberMatches = (normNumbers.match(/\d+(?:[.,]\d+)?/g) || []).map(n => {
+    return parseFloat(n.replace(',', '.'));
+  });
+
+  // Nhận diện đơn vị công nghệ thông dụng
+  const units = ['mah', 'kwh', 'wh', 'dpi', 'ghz', 'mhz', 'khz', 'hz', 'fps', 'tb', 'gb', 'mb', 'kb', 'inch', 'mm', 'cm', 'm', 'kg', 'g', 'w', 'v', 'a', 'pin'];
+  let unit = '';
+  for (const u of units) {
+    const reg = new RegExp(`\\b${u}\\b|(?<=\\d)${u}(?=\\W|$)`, 'i');
+    if (reg.test(clean)) {
+      unit = u;
+      break;
+    }
+  }
+
+  // Dạng chuỗi gọn không dấu cách/ký hiệu (vd: "type-c" -> "typec", "20.000mah" -> "20000mah")
+  const compact = normNumbers.replace(/[\s\-_.,/()]/g, '').toLowerCase();
+
+  // Danh sách từ khóa
+  const words = clean.replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, ' ').split(/\s+/).filter(Boolean);
+
+  return {
+    raw,
+    clean,
+    numbers: numberMatches,
+    unit,
+    compact,
+    words
+  };
+}
+
+/**
+ * Thuật toán AI Smart Value Matcher:
+ * Tìm giá trị CMS tương ứng có sẵn khi giá trị PIM chỉ khác cách trình bày (vd: 20000mAh vs 20.000 mAh vs 20000).
+ * CÁC RÀNG BUỘC AN TOÀN TUYỆT ĐỐI ĐỂ TRÁNH GỢI Ý SAI:
+ * 1. Bất biến số: Nếu 2 bên có số, số phải bằng nhau 100% (10000 không bao giờ map sang 20000).
+ * 2. Phủ định: "Có" không bao giờ map sang "Không", "Có dây" không bao giờ map sang "Không dây".
+ * 3. Đơn vị: Không bao giờ map chéo đơn vị khác nhau (W vs mAh).
+ */
+export function findSmartCmsValueSuggestion(textToLookup, availableCmsValues, isFilterProperty = false) {
+  if (!textToLookup || !Array.isArray(availableCmsValues) || availableCmsValues.length === 0) {
+    return null;
+  }
+
+  const target = canonicalizeValue(textToLookup);
+  if (!target.compact) return null;
+
+  let bestMatch = null;
+  let highestScore = 0;
+
+  for (const cmsItem of availableCmsValues) {
+    const cmsValText = cmsItem.valName || cmsItem.rawValue || '';
+    if (!cmsValText) continue;
+
+    const cand = canonicalizeValue(cmsValText);
+    if (!cand.compact) continue;
+
+    // Ràng buộc 1: Bất biến số lượng
+    if (target.numbers.length > 0 || cand.numbers.length > 0) {
+      if (target.numbers.length !== cand.numbers.length) {
+        // Trường hợp đặc biệt: CMS chỉ lưu số (20000) và PIM là 20.000 mAh
+        if (target.numbers.length === 1 && cand.numbers.length === 1) {
+          if (target.numbers[0] !== cand.numbers[0]) continue;
+        } else {
+          continue;
+        }
+      } else {
+        let numsMatch = true;
+        for (let i = 0; i < target.numbers.length; i++) {
+          if (target.numbers[i] !== cand.numbers[i]) {
+            numsMatch = false;
+            break;
+          }
+        }
+        if (!numsMatch) continue;
+      }
+    }
+
+    // Ràng buộc 2: Tính phủ định (Có vs Không)
+    const targetHasKhong = target.words.includes('không') || target.clean.includes('khong');
+    const candHasKhong = cand.words.includes('không') || cand.clean.includes('khong');
+    if (targetHasKhong !== candHasKhong) {
+      continue;
+    }
+
+    // Ràng buộc 3: Đơn vị không được xung đột
+    if (target.unit && cand.unit && target.unit !== cand.unit) {
+      continue;
+    }
+
+    let score = 0;
+    let reason = '';
+
+    // Mẫu 1: Trùng khớp chuỗi rút gọn (vd: "20000mah" === "20000mah", "typec" === "typec", "65w" === "65w")
+    if (target.compact === cand.compact) {
+      score = 0.98;
+      reason = 'Đồng nhất nội dung, chỉ khác cách viết số hoặc khoảng trắng/dấu gạch';
+    } 
+    // Mẫu 2: PIM có đơn vị, CMS chỉ lưu số hoặc ngược lại (vd: PIM "20.000 mAh" -> CMS "20000")
+    else if (target.numbers.length === 1 && cand.numbers.length === 1 && target.numbers[0] === cand.numbers[0]) {
+      if (cand.compact === String(target.numbers[0]) || cand.unit === target.unit) {
+        score = 0.96;
+        reason = `Trùng khớp thông số kỹ thuật (${target.numbers[0]}${target.unit ? ' ' + target.unit : ''}), CMS chỉ lưu số hoặc định dạng rút gọn`;
+      } else {
+        const commonWords = target.words.filter(w => cand.words.includes(w));
+        if (commonWords.length > 0) {
+          score = 0.88;
+          reason = `Trùng khớp thông số kỹ thuật và từ khóa (${commonWords.join(' ')})`;
+        }
+      }
+    }
+    // Mẫu 3: Không có số, kiểm tra độ tương đồng từ khóa
+    else if (target.numbers.length === 0 && cand.numbers.length === 0) {
+      if (target.compact === cand.compact) {
+        score = 0.96;
+        reason = 'Đồng nhất chữ cái, chỉ khác dấu cách hoặc dấu gạch nối';
+      } else {
+        const intersection = target.words.filter(w => cand.words.includes(w));
+        const union = new Set([...target.words, ...cand.words]);
+        const jaccard = union.size > 0 ? intersection.length / union.size : 0;
+        if (jaccard >= 0.75) {
+          score = 0.85;
+          reason = `Độ tương đồng từ khóa cao (${Math.round(jaccard * 100)}%)`;
+        }
+      }
+    }
+
+    if (score > highestScore && score >= 0.82) {
+      highestScore = score;
+      bestMatch = {
+        valId: String(cmsItem.valId).trim(),
+        valName: cmsValText,
+        confidence: score,
+        reason,
+        isFilter: Boolean(isFilterProperty)
+      };
+    }
+  }
+
+  return bestMatch;
+}
+
 function determineSmartMode(propObj, normCode) {
   let pimMode = 'tskt';
   if (
@@ -84,7 +253,7 @@ function determineSmartMode(propObj, normCode) {
  * Smart Auto-Mapping (Ưu tiên 2):
  * Dynamically finds a CMS Property matching a PIM technical code & Vietnamese label within a category.
  */
-export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, cmsCatalog) {
+export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, cmsCatalog, attrMap = null) {
   if (!cmsCatalog) return null;
   
   const catProps = [];
@@ -119,13 +288,97 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
 
   if (catProps.length === 0) return null;
 
+  const catIdStr = String(cmsCategoryId).trim();
   const normLabel = normalizeText(pimAttrLabel);
   const normCode = normalizeText(pimAttrCode);
+  const isFilterAttr = normCode.includes('filter_master') || normCode.includes('_filter') || normCode.endsWith('_filter');
+  const isTsktAttr = normCode.includes('tskt_master') || normCode.includes('_tskt') || normCode.endsWith('_tskt');
+
+  // RÀNG BUỘC BẤT BIẾN NGÀNH 57 (SẠC DỰ PHÒNG):
+  // - battery_capacity_filter_master CHỈ map với CMS 500 (Dung lượng pin, Filter)
+  // - battery_capacity_tskt_master CHỈ map với CMS 23370 (Dung lượng pin, TSKT)
+  // TUYỆT ĐỐI KHÔNG GỢI Ý MÃ 500 CHO TSKT!
+  if (catIdStr === '57') {
+    if (normCode.includes('battery_capacity') && isTsktAttr) {
+      const p23370 = catProps.find(p => String(p.propertyId).trim() === '23370');
+      if (p23370) return determineSmartMode(p23370, normCode);
+    }
+    if (normCode.includes('battery_capacity') && isFilterAttr) {
+      const p500 = catProps.find(p => String(p.propertyId).trim() === '500');
+      if (p500) return determineSmartMode(p500, normCode);
+    }
+  }
+
+  // Pre-scan attrMap to detect properties already claimed by opposite mode (Filter vs TSKT)
+  const mappedFilterPropIds = new Set();
+  const mappedTsktPropIds = new Set();
+  if (attrMap) {
+    for (const [k, rule] of attrMap.entries()) {
+      if (k.startsWith(`${catIdStr}___`)) {
+        const code = String(rule.pimAttributeCode || '').toLowerCase();
+        const propId = String(rule.originalP1Id || rule.cmsPropertyId).trim();
+        if (!propId) continue;
+        if (code.includes('filter_master') || code.includes('_filter') || rule.pimMode === 'filter') {
+          mappedFilterPropIds.add(propId);
+        } else if (code.includes('tskt_master') || code.includes('_tskt') || rule.pimMode === 'tskt') {
+          mappedTsktPropIds.add(propId);
+        }
+      }
+    }
+  }
+
+  const currentBaseCode = getBaseAttrCode(pimAttrCode);
+
+  const isCandidateEligible = (p) => {
+    const pId = String(p.propertyId).trim();
+
+    // Ràng buộc riêng ngành 57 (Sạc dự phòng):
+    // 500 CHỈ DÙNG CHO FILTER, 23370 CHỈ DÙNG CHO TSKT
+    if (catIdStr === '57') {
+      if (isTsktAttr && pId === '500') return false;
+      if (isFilterAttr && pId === '23370') return false;
+    }
+
+    // Nếu mã này đang được map cho 1 thuộc tính khác trong attrMap:
+    if (attrMap) {
+      let isClaimedByDifferentConcept = false;
+
+      for (const [k, rule] of attrMap.entries()) {
+        if (k.startsWith(`${catIdStr}___`)) {
+          const rulePimCode = String(rule.pimAttributeCode || '').toLowerCase();
+          const rulePropId = String(rule.originalP1Id || rule.cmsPropertyId).trim();
+          if (rulePropId === pId) {
+            const ruleBase = getBaseAttrCode(rulePimCode);
+            // Nếu cùng khái niệm kỹ thuật (ví dụ ram_tskt_master và ram_filter_master)
+            // -> HOÀN TOÀN HỢP LỆ ĐỂ DÙNG CHUNG MÃ CMS (Dual-Role TSKT & Filter)!
+            if (ruleBase === currentBaseCode && catIdStr !== '57') {
+              return true;
+            }
+            // Khác khái niệm kỹ thuật -> đã bị thuộc tính khác chiếm dụng
+            isClaimedByDifferentConcept = true;
+          }
+        }
+      }
+      if (isClaimedByDifferentConcept) {
+        return false;
+      }
+    }
+
+    // TSKT không được gợi ý mã CMS chỉ dùng cho Filter
+    if (isTsktAttr && mappedFilterPropIds.has(pId) && !mappedTsktPropIds.has(pId)) {
+      return false;
+    }
+    // Filter không được gợi ý mã CMS chỉ dùng cho TSKT
+    if (isFilterAttr && mappedTsktPropIds.has(pId) && !mappedFilterPropIds.has(pId)) {
+      return false;
+    }
+    return true;
+  };
 
   // 1. Exact match with Vietnamese label
   if (normLabel) {
     for (const p of catProps) {
-      if (normalizeText(p.propertyName) === normLabel) {
+      if (normalizeText(p.propertyName) === normLabel && isCandidateEligible(p)) {
         return determineSmartMode(p, normCode);
       }
     }
@@ -137,7 +390,7 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
       if (normLabel === syn.pim || normLabel.includes(syn.pim)) {
         for (const targetName of syn.cms) {
           for (const p of catProps) {
-            if (normalizeText(p.propertyName) === targetName) {
+            if (normalizeText(p.propertyName) === targetName && isCandidateEligible(p)) {
               return determineSmartMode(p, normCode);
             }
           }
@@ -151,7 +404,7 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
     if (normCode.includes(kw.code)) {
       for (const targetName of kw.names) {
         for (const p of catProps) {
-          if (normalizeText(p.propertyName) === targetName) {
+          if (normalizeText(p.propertyName) === targetName && isCandidateEligible(p)) {
             return determineSmartMode(p, normCode);
           }
         }
@@ -165,7 +418,7 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
       if (normLabel === syn.pim || normLabel.includes(syn.pim)) {
         for (const targetName of syn.cms) {
           for (const p of catProps) {
-            if (normalizeText(p.propertyName).includes(targetName)) {
+            if (normalizeText(p.propertyName).includes(targetName) && isCandidateEligible(p)) {
               return determineSmartMode(p, normCode);
             }
           }
@@ -179,7 +432,7 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
     if (normCode.includes(kw.code)) {
       for (const targetName of kw.names) {
         for (const p of catProps) {
-          if (normalizeText(p.propertyName).includes(targetName)) {
+          if (normalizeText(p.propertyName).includes(targetName) && isCandidateEligible(p)) {
             return determineSmartMode(p, normCode);
           }
         }
@@ -191,7 +444,7 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
   if (normLabel && normLabel.length >= 3) {
     for (const p of catProps) {
       const pNorm = normalizeText(p.propertyName);
-      if (pNorm.includes(normLabel) || normLabel.includes(pNorm)) {
+      if ((pNorm.includes(normLabel) || normLabel.includes(pNorm)) && isCandidateEligible(p)) {
         return determineSmartMode(p, normCode);
       }
     }
@@ -216,7 +469,8 @@ export function runMappingTransformation({
   categoryMappings = [],
   attributeMappings = [],
   mappingRef = [],
-  userConfig = { username: '174873', fullname: 'Quản trị viên', siteId: '2', languageId: 'vi-VN' }
+  userConfig = { username: '174873', fullname: 'Quản trị viên', siteId: '2', languageId: 'vi-VN' },
+  valueMappings = {}
 }) {
   const validImportRows = [];
   const holdRows = [];
@@ -259,7 +513,7 @@ export function runMappingTransformation({
     if (catId && pimCode && propId) {
       const key = `${catId}___${pimCode.toLowerCase()}`;
       let pimMode = 'tskt';
-      if (pimCode.includes('_filter_') || pimCode.endsWith('_filter')) pimMode = 'filter';
+      if (pimCode.includes('filter_master') || pimCode.includes('_filter_') || pimCode.endsWith('_filter') || pimCode.includes('_filter')) pimMode = 'filter';
       else if (pimCode.includes('model') || pimCode.includes('product_line') || pimCode.includes('size_') || pimCode.includes('mass_')) pimMode = 'text';
 
       attrMap.set(key, {
@@ -283,6 +537,90 @@ export function runMappingTransformation({
       attrMap.set(key, am);
     }
   });
+
+  // RÀNG BUỘC BẤT DI BẤT DỊCH NGÀNH 57 (SẠC DỰ PHÒNG):
+  // 1. Mã CMS 500 CHỈ DÙNG CHO FILTER (battery_capacity_filter_master)
+  // 2. Mã CMS 23370 CHỈ DÙNG CHO TSKT (battery_capacity_tskt_master)
+  // 3. Mã CMS 23352 CHỈ DÙNG CHO CỔNG RA FILTER (exit_gate_filter_master) - Ưu tiên 1 mặc định
+  // 4. Mã CMS 21149 CHỈ DÙNG CHO NGUỒN RA TSKT (output_tskt_master) - Ưu tiên 1 mặc định
+  const cat57FilterKey = '57___battery_capacity_filter_master';
+  if (attrMap.has(cat57FilterKey)) {
+    const existing = attrMap.get(cat57FilterKey);
+    attrMap.set(cat57FilterKey, {
+      ...existing,
+      cmsPropertyId: '500',
+      cmsPropertyName: 'Dung lượng pin',
+      pimMode: 'filter',
+      status: 'Confirmed'
+    });
+  }
+  const cat57TsktKey = '57___battery_capacity_tskt_master';
+  if (attrMap.has(cat57TsktKey)) {
+    const existing = attrMap.get(cat57TsktKey);
+    attrMap.set(cat57TsktKey, {
+      ...existing,
+      cmsPropertyId: '23370',
+      cmsPropertyName: 'Dung lượng pin',
+      pimMode: 'tskt',
+      status: 'Confirmed'
+    });
+  }
+  const cat57ExitGateKey = '57___exit_gate_filter_master';
+  if (attrMap.has(cat57ExitGateKey)) {
+    const existing = attrMap.get(cat57ExitGateKey);
+    if (String(existing.cmsPropertyId).trim() === '26138' || existing.source === 'priority2_accepted') {
+      attrMap.set(cat57ExitGateKey, {
+        ...existing,
+        cmsPropertyId: '23352',
+        cmsPropertyName: 'Cổng ra (Output)',
+        pimMode: 'filter',
+        status: 'Confirmed',
+        source: 'file_ref',
+        originalP1Id: '23352',
+        originalP1Name: 'Cổng ra (Output)'
+      });
+    }
+  } else {
+    attrMap.set(cat57ExitGateKey, {
+      cmsCategoryId: '57',
+      pimAttributeCode: 'exit_gate_filter_master',
+      cmsPropertyId: '23352',
+      cmsPropertyName: 'Cổng ra (Output)',
+      pimMode: 'filter',
+      status: 'Confirmed',
+      source: 'file_ref',
+      originalP1Id: '23352',
+      originalP1Name: 'Cổng ra (Output)'
+    });
+  }
+  const cat57OutputKey = '57___output_tskt_master';
+  if (attrMap.has(cat57OutputKey)) {
+    const existing = attrMap.get(cat57OutputKey);
+    if (String(existing.cmsPropertyId).trim() === '26138' || existing.source === 'priority2_accepted') {
+      attrMap.set(cat57OutputKey, {
+        ...existing,
+        cmsPropertyId: '21149',
+        cmsPropertyName: 'Nguồn ra',
+        pimMode: 'tskt',
+        status: 'Confirmed',
+        source: 'file_ref',
+        originalP1Id: '21149',
+        originalP1Name: 'Nguồn ra'
+      });
+    }
+  } else {
+    attrMap.set(cat57OutputKey, {
+      cmsCategoryId: '57',
+      pimAttributeCode: 'output_tskt_master',
+      cmsPropertyId: '21149',
+      cmsPropertyName: 'Nguồn ra',
+      pimMode: 'tskt',
+      status: 'Confirmed',
+      source: 'file_ref',
+      originalP1Id: '21149',
+      originalP1Name: 'Nguồn ra'
+    });
+  }
 
   // Count model occurrences
   pimProducts.forEach(p => {
@@ -402,7 +740,7 @@ export function runMappingTransformation({
       const p1Rule = attrMap.get(attrRuleKey);
 
       // ƯU TIÊN 2: Smart Auto-Mapping from current CMS Catalog
-      let p2Match = smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, cmsCatalog);
+      let p2Match = smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, cmsCatalog, attrMap);
 
       // KIỂM TRA XUNG ĐỘT: Nếu Ưu tiên 2 đề xuất 1 cmsPropertyId mà đã có cột PIM KHÁC
       // chiếm dụng qua Ưu tiên 1 rồi → vô hiệu hóa Ưu tiên 2 để tránh map nhầm.
@@ -420,7 +758,24 @@ export function runMappingTransformation({
 
             const rulePropertyId = String(rule.originalP1Id || rule.cmsPropertyId).trim();
             if (rulePropertyId === p2PropId) {
-              // Property ID này đã được map trong file cho 1 cột PIM khác → chặn
+              // Ngoại lệ hợp lệ: Cùng 1 thuộc tính kỹ thuật có 2 vai trò PIM (1 TSKT, 1 Filter) dùng chung mã CMS
+              // Ví dụ: ram_tskt_master và ram_filter_master cùng dùng mã CMS 50 (hoặc 3059)
+              const currentBase = getBaseAttrCode(pimAttrCode);
+              const ruleBase = getBaseAttrCode(keyPimCode);
+              const isDifferentRole = (
+                (keyPimCode.includes('filter') && pimAttrCode.toLowerCase().includes('tskt')) ||
+                (keyPimCode.includes('tskt') && pimAttrCode.toLowerCase().includes('filter'))
+              );
+
+              // Riêng ngành 57 (Sạc dự phòng): Tuyệt đối không cho TSKT dùng mã 500 hoặc Filter dùng mã 23370
+              const isCat57BatteryConflict = String(cmsCategoryId).trim() === '57' && (p2PropId === '500' || p2PropId === '23370');
+
+              if (currentBase === ruleBase && isDifferentRole && !isCat57BatteryConflict) {
+                // Hợp lệ: Dual-role thuộc tính kỹ thuật dùng chung mã CMS
+                continue;
+              }
+
+              // Khác thuộc tính kỹ thuật mà đòi chiếm chung mã CMS → chặn xung đột
               isP2PropertyClaimedByAnotherP1 = true;
               break;
             }
@@ -469,12 +824,17 @@ export function runMappingTransformation({
           const appliedId = isUsingP2 ? p2CmsId : p1FileId;
           const appliedSrc = isUsingP2 ? 'priority2_accepted' : 'priority1';
 
+          const isFilterAttr = pimAttrCode.includes('_filter_') || pimAttrCode.endsWith('_filter');
+          const isTsktAttr = pimAttrCode.includes('_tskt_') || pimAttrCode.endsWith('_tskt');
+          const pimAttributeKind = isFilterAttr ? 'Filter' : (isTsktAttr ? 'TSKT' : 'Thuộc tính');
+
           discrepanciesMap.set(discKey, {
             id: discKey,
             cmsCategoryId,
             cmsCategoryName,
             pimAttributeCode: pimAttrCode,
             pimAttributeLabel: pimAttrLabel || p1FileName || p2CmsName,
+            pimAttributeKind,
             priority1: {
               cmsPropertyId: p1FileId,
               cmsPropertyName: p1FileName,
@@ -681,7 +1041,22 @@ export function runMappingTransformation({
           }
         }
 
-        // Lookup in CMS Catalog valueLookup
+        // BƯỚC 1: Kiểm tra xem người dùng đã từng xác nhận dùng giá trị gợi ý này chưa (User Accepted Suggestion)
+        const valMapKey = `${cmsCategoryId}___${cmsPropertyId}___${normalizeText(textToLookup)}`;
+        const userAcceptedVal = valueMappings && valueMappings[valMapKey];
+
+        if (userAcceptedVal && userAcceptedVal.valId) {
+          resolvedItems.push({
+            raw: item,
+            decoded: textToLookup,
+            valId: String(userAcceptedVal.valId).trim(),
+            matchedName: userAcceptedVal.valName || textToLookup,
+            isUserAcceptedSuggestion: true
+          });
+          continue;
+        }
+
+        // BƯỚC 2: Tra cứu chính xác trong CMS Catalog valueLookup
         const valLookupKey = `${cmsCategoryId}___${cmsPropertyId}___${normalizeText(textToLookup)}`;
         const matchedVals = cmsCatalog.valueLookup ? cmsCatalog.valueLookup.get(valLookupKey) || [] : [];
 
@@ -708,20 +1083,33 @@ export function runMappingTransformation({
             `Tìm thấy nhiều hơn 1 VALUEID (${candidates.map(v => v.valId).join(', ')}) cho giá trị "${textToLookup}". Cần chọn mã xác nhận.`
           );
         } else {
-          // Not found in CMS -> Propose new value
+          // BƯỚC 3: Không có mã chính xác trên CMS -> Quét tìm gợi ý thông minh (AI Smart Value Matcher)
           allItemsValid = false;
+
+          // Danh sách tất cả giá trị CMS hiện có của thuộc tính này
+          const propCatalogKey = `${cmsCategoryId}___${cmsPropertyId}`;
+          const availableCmsValues = cmsCatalog.properties?.get(propCatalogKey)?.values || [];
+
+          // Nhận diện thuộc tính có phải là Bộ lọc (Filter) hay không:
+          // Theo chỉ đạo người dùng: mã có filter_master hoặc _filter hoặc pimMode === 'filter'
+          const isFilterAttr = pimAttrCode.includes('filter_master') || pimAttrCode.includes('_filter') || pimMode === 'filter';
+          const smartSuggestion = findSmartCmsValueSuggestion(textToLookup, availableCmsValues, isFilterAttr);
+
           itemErrors.push(`Giá trị "${textToLookup}" chưa có trong danh mục CMS (Cần đề xuất tạo mới).`);
 
-          // Collect to proposal list
+          // Gom vào danh sách Đề xuất tạo mới (Proposals)
           const propKey = `${cmsCategoryId}___${cmsPropertyId}___${normalizeText(textToLookup)}`;
           if (!newProposalValues.has(propKey)) {
             newProposalValues.set(propKey, {
+              key: propKey,
               cmsCategoryId,
               cmsCategoryName,
               cmsPropertyId,
               cmsPropertyName,
               pimAttributeCode: pimAttrCode,
               rawText: textToLookup,
+              isFilterAttribute: isFilterAttr,
+              smartSuggestion,
               count: 0,
               sampleModels: [],
               associatedProductIds: [],
@@ -730,6 +1118,9 @@ export function runMappingTransformation({
           }
           const propItem = newProposalValues.get(propKey);
           propItem.count++;
+          if (smartSuggestion && !propItem.smartSuggestion) {
+            propItem.smartSuggestion = smartSuggestion;
+          }
           if (model_code) {
             const cleanModel = String(model_code).trim();
             if (!propItem.associatedModelCodes.includes(cleanModel.toLowerCase())) {
@@ -785,6 +1176,12 @@ export function runMappingTransformation({
           isUserConfirmedP2: usedSource === 'priority2_accepted',
           isUserConfirmedP1: usedSource === 'priority1_accepted',
           hasDiscrepancy: hasDiscrepancy,
+          isFilterAttribute: pimAttrCode.includes('filter_master') || pimAttrCode.includes('_filter') || pimMode === 'filter',
+          smartSuggestion: findSmartCmsValueSuggestion(
+            String(rawItems[0] || rawValue || ''), 
+            cmsCatalog.properties?.get(`${cmsCategoryId}___${cmsPropertyId}`)?.values || [],
+            pimAttrCode.includes('filter_master') || pimAttrCode.includes('_filter') || pimMode === 'filter'
+          ),
           reason: primaryReason,
           detail: itemErrors.join(' | ')
         });
@@ -854,18 +1251,102 @@ export function runMappingTransformation({
   }
 
   // Summary statistics
-  const distinctProductsCount = new Set(pimProducts.map(p => p.model_code)).size;
+  const distinctModelKeys = new Set(
+    pimProducts
+      .map(p => p.model_code || p.cms_product_id || p.sku)
+      .filter(Boolean)
+  );
+  const distinctProductsCount = distinctModelKeys.size || pimProducts.length;
   const distinctCmsIdsCount = new Set(pimProducts.map(p => p.cms_product_id).filter(Boolean)).size;
   const distinctFilesCount = new Set(pimProducts.map(p => p.fileOrigin).filter(Boolean)).size;
   const singleValCount = validImportRows.filter(r => !r.trace.isMulti && r.trace.pimMode !== 'text').length;
   const multiValCount = validImportRows.filter(r => r.trace.isMulti).length;
   const textValCount = validImportRows.filter(r => r.trace.pimMode === 'text').length;
 
+  // Detect dual-role CMS properties (mã CMS vừa dùng cho TSKT vừa dùng cho Filter)
+  const propUsageModes = new Map(); // `${cmsCategoryId}___${cmsPropertyId}` => { tsktAttrs: Set, filterAttrs: Set, propName, catName }
+  validImportRows.forEach(r => {
+    const catId = String(r.trace.cmsCategoryId).trim();
+    const propId = String(r.PROPERTYID).trim();
+    const code = String(r.trace.pimAttributeCode || '').toLowerCase();
+
+    // Ràng buộc nghiêm ngặt ngành 57 (Sạc dự phòng):
+    // Mã 500 CHỈ LÀ FILTER, mã 23370 CHỈ LÀ TSKT
+    if (catId === '57') {
+      const key = `${catId}___${propId}`;
+      if (!propUsageModes.has(key)) {
+        propUsageModes.set(key, {
+          tsktAttrs: new Set(),
+          filterAttrs: new Set(),
+          propName: r.trace.cmsPropertyName,
+          catName: r.trace.cmsCategoryName
+        });
+      }
+      if (propId === '500') {
+        propUsageModes.get(key).filterAttrs.add(code);
+        return;
+      }
+      if (propId === '23370') {
+        propUsageModes.get(key).tsktAttrs.add(code);
+        return;
+      }
+    }
+
+    const isFilterCode = code.includes('filter_master') || code.includes('_filter_') || code.endsWith('_filter') || code.includes('_filter');
+    const isTsktCode = code.includes('tskt_master') || code.includes('_tskt_') || code.endsWith('_tskt') || code.includes('_tskt');
+
+    const isFilter = (isFilterCode || r.trace.pimMode === 'filter') && !isTsktCode;
+    const isTskt = (isTsktCode || r.trace.pimMode === 'tskt') && !isFilterCode;
+
+    const key = `${catId}___${propId}`;
+    if (!propUsageModes.has(key)) {
+      propUsageModes.set(key, {
+        tsktAttrs: new Set(),
+        filterAttrs: new Set(),
+        propName: r.trace.cmsPropertyName,
+        catName: r.trace.cmsCategoryName
+      });
+    }
+    const entry = propUsageModes.get(key);
+    if (isFilter) entry.filterAttrs.add(code);
+    if (isTskt) entry.tsktAttrs.add(code);
+  });
+
+  const dualPurposeProperties = [];
+  for (const [key, entry] of propUsageModes.entries()) {
+    const [catId, propId] = key.split('___');
+    // Tuyệt đối không bao giờ xếp mã 500 ngành 57 vào dual-purpose
+    if (catId === '57' && propId === '500') continue;
+
+    // Phải có ít nhất 2 thuộc tính PIM riêng biệt thực sự (1 bên TSKT, 1 bên Filter)
+    const distinctTskt = Array.from(entry.tsktAttrs).filter(c => !entry.filterAttrs.has(c));
+    const distinctFilter = Array.from(entry.filterAttrs).filter(c => !entry.tsktAttrs.has(c));
+
+    if (distinctTskt.length > 0 && distinctFilter.length > 0) {
+      dualPurposeProperties.push({
+        cmsCategoryId: catId,
+        cmsCategoryName: entry.catName,
+        cmsPropertyId: propId,
+        cmsPropertyName: entry.propName,
+        tsktCodes: distinctTskt,
+        filterCodes: distinctFilter
+      });
+    }
+  }
+
+  // Tag rows that use dual-purpose properties
+  const dualPropKeys = new Set(dualPurposeProperties.map(dp => `${dp.cmsCategoryId}___${dp.cmsPropertyId}`));
+  validImportRows.forEach(r => {
+    const key = `${String(r.trace.cmsCategoryId).trim()}___${String(r.PROPERTYID).trim()}`;
+    r.trace.isDualRole = dualPropKeys.has(key);
+  });
+
   return {
     validImportRows,
     holdRows,
     proposals: Array.from(newProposalValues.values()),
     discrepancies: Array.from(discrepanciesMap.values()),
+    dualPurposeProperties,
     autoMappedAttributes: Array.from(autoMappedMap.values()),
     unmappedAttributes: Array.from(unmappedMap.values()),
     stats: {
@@ -879,6 +1360,8 @@ export function runMappingTransformation({
       textValCount,
       holdRowsCount: holdRows.length,
       proposalsCount: newProposalValues.size,
+      smartSuggestionsCount: Array.from(newProposalValues.values()).filter(p => p.smartSuggestion).length,
+      acceptedValueMappingsCount: Object.keys(valueMappings || {}).length,
       discrepanciesCount: discrepanciesMap.size,
       autoMappedCount: autoMappedMap.size,
       unmappedCount: unmappedMap.size,

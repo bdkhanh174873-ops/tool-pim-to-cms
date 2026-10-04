@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import Sidebar from './components/Sidebar';
-import Header from './components/Header';
 import FileUploadTab from './components/FileUploadTab';
 import MasterDataTab from './components/MasterDataTab';
 import MappingRulesTab from './components/MappingRulesTab';
@@ -32,6 +31,10 @@ import {
   saveAttributeMappings,
   getUserConfig,
   saveUserConfig,
+  getValueMappings,
+  saveValueMappings,
+  saveSingleValueMapping,
+  removeValueMapping,
   syncRulesFromMappingRef,
   syncCategoriesFromRef
 } from './services/storageService';
@@ -57,11 +60,17 @@ export default function App() {
 
     const allProducts = [];
     const allHeadersSet = new Set();
+    const allLabelsMap = {};
     let hasMissingCmsId = false;
 
     pimFiles.forEach(f => {
       if (!f.hasCmsProductIdColumn) hasMissingCmsId = true;
-      (f.headers || []).forEach(h => allHeadersSet.add(h));
+      (f.headers || []).forEach((h, idx) => {
+        allHeadersSet.add(h);
+        if (f.labels && f.labels[idx] && !allLabelsMap[h]) {
+          allLabelsMap[h] = f.labels[idx];
+        }
+      });
       (f.products || []).forEach(p => {
         allProducts.push({
           ...p,
@@ -74,7 +83,7 @@ export default function App() {
     });
 
     const distinctCmsIds = new Set(allProducts.map(p => p.cms_product_id).filter(Boolean)).size;
-    const distinctModels = new Set(allProducts.map(p => p.model_code).filter(Boolean)).size;
+    const distinctModels = new Set(allProducts.map(p => p.model_code || p.cms_product_id).filter(Boolean)).size;
 
     return {
       isMultiFile: pimFiles.length > 1,
@@ -86,6 +95,7 @@ export default function App() {
       distinctCmsIds,
       distinctModels,
       headers: Array.from(allHeadersSet),
+      labelsMap: allLabelsMap,
       hasCmsProductIdColumn: !hasMissingCmsId
     };
   }, [pimFiles]);
@@ -139,6 +149,9 @@ export default function App() {
     saveAttributeMappings(attributeMappings);
   }, [attributeMappings]);
 
+  // Confirmed/Accepted Value Mappings for Smart AI suggestions: { [`${catId}___${propId}___${cleanText}`]: { valId, valName } }
+  const [valueMappings, setValueMappings] = useState(() => getValueMappings());
+
   // Execute Transformation
   const executeTransformation = () => {
     if (!pimProductData || !masterFiles.pimOption?.parsedData || !masterFiles.cmsCatalog?.parsedData) {
@@ -152,7 +165,8 @@ export default function App() {
       categoryMappings,
       attributeMappings,
       mappingRef: masterFiles.mappingRef?.parsedData,
-      userConfig
+      userConfig,
+      valueMappings
     });
 
     setTransformationResult(result);
@@ -163,7 +177,60 @@ export default function App() {
     if (pimProductData && masterFiles.pimOption?.parsedData && masterFiles.cmsCatalog?.parsedData) {
       executeTransformation();
     }
-  }, [pimProductData, masterFiles, categoryMappings, attributeMappings]);
+  }, [pimProductData, masterFiles, categoryMappings, attributeMappings, valueMappings]);
+
+  // Handle Accept Smart AI Value Suggestion
+  const handleAcceptValueSuggestion = (proposal) => {
+    if (!proposal || !proposal.smartSuggestion) return;
+    const { cmsCategoryId, cmsPropertyId, rawText, smartSuggestion } = proposal;
+    const updated = saveSingleValueMapping({
+      cmsCategoryId,
+      cmsPropertyId,
+      rawText,
+      valId: smartSuggestion.valId,
+      valName: smartSuggestion.valName,
+      source: 'smart_suggestion_accepted',
+      reason: smartSuggestion.reason
+    });
+    setValueMappings({ ...updated });
+    notify.success(`Đã áp dụng giá trị CMS "${smartSuggestion.valName}" (Mã: ${smartSuggestion.valId}) cho "${rawText}"!`);
+  };
+
+  // Handle Batch Accept All Smart AI Value Suggestions
+  const handleAcceptAllValueSuggestions = (proposalsList) => {
+    const listWithSuggestions = (proposalsList || []).filter(p => p.smartSuggestion && p.smartSuggestion.valId);
+    if (listWithSuggestions.length === 0) {
+      notify.info('Không có gợi ý giá trị phù hợp để áp dụng.');
+      return;
+    }
+
+    const current = { ...valueMappings };
+    listWithSuggestions.forEach(p => {
+      const mapKey = `${p.cmsCategoryId}___${p.cmsPropertyId}___${p.rawText.trim().toLowerCase()}`;
+      current[mapKey] = {
+        key: mapKey,
+        cmsCategoryId: String(p.cmsCategoryId).trim(),
+        cmsPropertyId: String(p.cmsPropertyId).trim(),
+        rawText: p.rawText.trim(),
+        valId: String(p.smartSuggestion.valId).trim(),
+        valName: String(p.smartSuggestion.valName).trim(),
+        source: 'smart_suggestion_accepted',
+        reason: p.smartSuggestion.reason,
+        confirmedAt: new Date().toISOString()
+      };
+    });
+
+    saveValueMappings(current);
+    setValueMappings({ ...current });
+    notify.success(`Đã áp dụng thành công ${listWithSuggestions.length} giá trị gợi ý CMS thông minh!`);
+  };
+
+  // Handle Remove / Revert Value Mapping
+  const handleRemoveValueMapping = (mapKey, rawText) => {
+    const updated = removeValueMapping(mapKey);
+    setValueMappings({ ...updated });
+    notify.info(`Đã hủy áp dụng giá trị cho "${rawText || 'mục này'}"!`);
+  };
 
   // Handle Master File Upload and save to IndexedDB
   const handleUpdateMasterFile = async (type, file) => {
@@ -770,20 +837,43 @@ export default function App() {
       const originalP1Name = discrepancy.priority1?.cmsPropertyName 
         || (existingIdx !== -1 ? (prev[existingIdx].originalP1Name || prev[existingIdx].cmsPropertyName) : '');
 
+      const code = (discrepancy.pimAttributeCode || '').toLowerCase();
+      let pimMode = 'tskt';
+      if (code.includes('filter_master') || code.includes('_filter') || discrepancy.pimAttributeKind === 'Filter') {
+        pimMode = 'filter';
+      } else if (
+        code.includes('model') || 
+        code.includes('product_line') || 
+        code.includes('size_') || 
+        code.includes('mass_') || 
+        (isPriority2 && discrepancy.priority2?.propertyType === 0)
+      ) {
+        pimMode = 'text';
+      }
+
+      // Ràng buộc bảo vệ Category 57 (Sạc dự phòng): TSKT không được gán mã 500
+      let finalChosenPropertyId = String(chosenPropertyId).trim();
+      let finalPropertyName = isPriority2 ? (discrepancy.priority2?.cmsPropertyName || '') : (discrepancy.priority1?.cmsPropertyName || '');
+      if (catId === '57' && code === 'battery_capacity_tskt_master' && finalChosenPropertyId === '500') {
+        finalChosenPropertyId = '23370';
+        finalPropertyName = 'Dung lượng pin';
+        pimMode = 'tskt';
+      }
+
       const updatedRule = {
         cmsCategoryId: catId,
         cmsCategoryName: discrepancy.cmsCategoryName || '',
         pimAttributeCode: discrepancy.pimAttributeCode,
-        cmsPropertyId: String(chosenPropertyId).trim(),
-        cmsPropertyName: isPriority2 ? (discrepancy.priority2?.cmsPropertyName || '') : (discrepancy.priority1?.cmsPropertyName || ''),
-        pimMode: isPriority2 ? (discrepancy.priority2?.propertyType === 0 ? 'text' : 'tskt') : 'tskt',
+        cmsPropertyId: finalChosenPropertyId,
+        cmsPropertyName: finalPropertyName,
+        pimMode,
         status: 'Confirmed',
         source: isPriority2 ? 'priority2_accepted' : 'priority1_accepted',
         originalP1Id: originalP1Id,
         originalP1Name: originalP1Name,
         note: isPriority2 
-          ? `Người dùng đã duyệt áp dụng mã ${chosenPropertyId} theo Danh mục CMS thông minh (Ưu tiên 2)`
-          : `Người dùng đã chọn giữ mã ${chosenPropertyId} theo File tham chiếu (Ưu tiên 1)`,
+          ? `Người dùng đã duyệt áp dụng mã ${finalChosenPropertyId} theo Danh mục CMS thông minh (Ưu tiên 2)`
+          : `Người dùng đã chọn giữ mã ${finalChosenPropertyId} theo File tham chiếu (Ưu tiên 1)`,
         updatedAt: new Date().toISOString()
       };
 
@@ -800,6 +890,50 @@ export default function App() {
       `Đã áp dụng mã CMS ${chosenPropertyId} cho thuộc tính "${discrepancy.pimAttributeLabel || discrepancy.pimAttributeCode}" (${isPriority2 ? 'Ưu tiên 2: CMS thông minh' : 'Ưu tiên 1: File tham chiếu'})!`,
       'Cập nhật quy tắc thành công'
     );
+  };
+
+  // Khôi phục toàn bộ các thuộc tính đang có chênh lệch về Ưu tiên 1 mặc định (File tham chiếu)
+  const handleResetAllDiscrepanciesToP1 = () => {
+    if (!transformationResult?.discrepancies || transformationResult.discrepancies.length === 0) return;
+    setAttributeMappings(prev => {
+      let next = [...prev];
+      transformationResult.discrepancies.forEach(disc => {
+        const catId = String(disc.cmsCategoryId).trim();
+        const p1Id = String(disc.priority1?.cmsPropertyId).trim();
+        const p1Name = disc.priority1?.cmsPropertyName || '';
+        const code = (disc.pimAttributeCode || '').toLowerCase();
+        const idx = next.findIndex(a => 
+          String(a.cmsCategoryId).trim() === catId && 
+          String(a.pimAttributeCode).trim().toLowerCase() === code
+        );
+        let pimMode = 'tskt';
+        if (code.includes('filter') || disc.pimAttributeKind === 'Filter') pimMode = 'filter';
+        else if (code.includes('model') || code.includes('product_line') || code.includes('size_') || code.includes('mass_')) pimMode = 'text';
+
+        const resetRule = {
+          cmsCategoryId: catId,
+          cmsCategoryName: disc.cmsCategoryName || '',
+          pimAttributeCode: disc.pimAttributeCode,
+          cmsPropertyId: p1Id,
+          cmsPropertyName: p1Name,
+          pimMode,
+          status: 'Confirmed',
+          source: 'file_ref', // Reset hoàn toàn về Ưu tiên 1
+          originalP1Id: p1Id,
+          originalP1Name: p1Name,
+          note: `Khôi phục về Ưu tiên 1 (File tham chiếu): Mã CMS ${p1Id}`,
+          updatedAt: new Date().toISOString()
+        };
+
+        if (idx !== -1) {
+          next[idx] = { ...next[idx], ...resetRule };
+        } else {
+          next.push(resetRule);
+        }
+      });
+      return next;
+    });
+    notify.success('Đã khôi phục toàn bộ các thuộc tính chênh lệch về Ưu tiên 1 mặc định (File tham chiếu)!', 'Khôi phục Ưu tiên 1');
   };
 
   // Bulk add auto-mapped rules from Priority 2 into attributeMappings
@@ -855,18 +989,6 @@ export default function App() {
 
       {/* Main Workspace Column */}
       <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
-        <Header
-          activeTab={activeTab}
-          setActiveTab={setActiveTab}
-          onLoadSample={handleLoadSampleAll}
-          isSampleLoading={isLoading}
-          pimFiles={pimFiles}
-          pimProductData={pimProductData}
-          transformationResult={transformationResult}
-          masterFiles={masterFiles}
-          onOpenMasterData={() => setActiveTab('masterData')}
-        />
-
         <main style={{ flex: 1, padding: '24px 0', overflowY: 'auto' }}>
           {activeTab === 'upload' && (
             <FileUploadTab
@@ -928,11 +1050,16 @@ export default function App() {
               setTransformationResult={setTransformationResult}
               onSupplementCmsId={handleSupplementCmsId}
               userConfig={userConfig}
+              valueMappings={valueMappings}
+              onAcceptValueSuggestion={handleAcceptValueSuggestion}
+              onAcceptAllValueSuggestions={handleAcceptAllValueSuggestions}
+              onRemoveValueMapping={handleRemoveValueMapping}
               onProceedToExport={() => setActiveTab('export')}
               onLoadSampleAll={handleLoadSampleAll}
               onGoToUpload={() => setActiveTab('upload')}
               onGoToMapping={() => setActiveTab('mapping')}
               onResolveDiscrepancy={handleResolveDiscrepancy}
+              onResetAllDiscrepanciesToP1={handleResetAllDiscrepanciesToP1}
               isLoading={isLoading}
             />
           )}

@@ -203,17 +203,6 @@ export default function MasterDataTab({
             </span>
 
             <button
-              onClick={onLoadSampleMasterData}
-              disabled={isLoading}
-              className="btn btn-primary"
-              style={{ fontSize: '0.8rem', padding: '7px 14px' }}
-              title="Nạp nhanh 6 file mẫu thực tế"
-            >
-              <Sparkles size={14} />
-              <span>{isLoading ? 'Đang nạp...' : '⚡ Nạp 6 File Mẫu'}</span>
-            </button>
-
-            <button
               onClick={onResetMasterFiles}
               className="btn btn-secondary"
               style={{ fontSize: '0.8rem', padding: '7px 12px', color: '#dc2626' }}

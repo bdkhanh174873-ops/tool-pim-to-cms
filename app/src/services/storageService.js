@@ -1,6 +1,7 @@
 const STORAGE_KEYS = {
   CATEGORY_MAPPINGS: 'pim_cms_cat_mappings_v1',
   ATTRIBUTE_MAPPINGS: 'pim_cms_attr_mappings_v1',
+  VALUE_MAPPINGS: 'pim_cms_value_mappings_v1',
   AUDIT_LOGS: 'pim_cms_audit_logs_v1',
   USER_CONFIG: 'pim_cms_user_config_v1'
 };
@@ -24,6 +25,117 @@ const DEFAULT_CAT_MAPPINGS = [
  * Note: inside_the_box_is_tskt_master maps to 26601 as confirmed by user.
  */
 const DEFAULT_ATTR_MAPPINGS = [
+  // Ngành 57 - Sạc dự phòng (Quy tắc chuẩn bất di bất dịch từ thuoc_tinh_pim_cms.xlsx)
+  {
+    cmsCategoryId: '57',
+    pimAttributeCode: 'battery_capacity_filter_master',
+    cmsPropertyId: '500',
+    cmsPropertyName: 'Dung lượng pin',
+    pimMode: 'filter',
+    status: 'Confirmed',
+    source: 'file_ref',
+    note: 'Chỉ dùng cho Filter (Mã 500)',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    cmsCategoryId: '57',
+    pimAttributeCode: 'battery_capacity_tskt_master',
+    cmsPropertyId: '23370',
+    cmsPropertyName: 'Dung lượng pin',
+    pimMode: 'tskt',
+    status: 'Confirmed',
+    source: 'file_ref',
+    note: 'Chỉ dùng cho TSKT (Mã 23370)',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    cmsCategoryId: '57',
+    pimAttributeCode: 'exit_gate_filter_master',
+    cmsPropertyId: '23352',
+    cmsPropertyName: 'Cổng ra (Output)',
+    pimMode: 'filter',
+    status: 'Confirmed',
+    source: 'file_ref',
+    note: 'Ưu tiên 1 File tham chiếu: Cổng ra Filter dùng mã 23352',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    cmsCategoryId: '57',
+    pimAttributeCode: 'gateway_filter_master',
+    cmsPropertyId: '23351',
+    cmsPropertyName: 'Cổng vào (Input)',
+    pimMode: 'filter',
+    status: 'Confirmed',
+    source: 'file_ref',
+    note: 'Ưu tiên 1 File tham chiếu: Cổng vào Filter dùng mã 23351',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    cmsCategoryId: '57',
+    pimAttributeCode: 'output_tskt_master',
+    cmsPropertyId: '21149',
+    cmsPropertyName: 'Nguồn ra',
+    pimMode: 'tskt',
+    status: 'Confirmed',
+    source: 'file_ref',
+    note: 'Ưu tiên 1 File tham chiếu: Nguồn ra TSKT dùng mã 21149',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    cmsCategoryId: '57',
+    pimAttributeCode: 'input_tskt_master',
+    cmsPropertyId: '6441',
+    cmsPropertyName: 'Nguồn vào',
+    pimMode: 'tskt',
+    status: 'Confirmed',
+    source: 'file_ref',
+    note: 'Ưu tiên 1 File tham chiếu: Nguồn vào TSKT dùng mã 6441',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    cmsCategoryId: '57',
+    pimAttributeCode: 'inside_the_box_is_tskt_master',
+    cmsPropertyId: '10039',
+    cmsPropertyName: 'Trong hộp có',
+    pimMode: 'tskt',
+    status: 'Confirmed',
+    source: 'file_ref',
+    note: 'Ưu tiên 1 File tham chiếu: Trong hộp có dùng mã 10039',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    cmsCategoryId: '57',
+    pimAttributeCode: 'charging_power_filter_master',
+    cmsPropertyId: '34898',
+    cmsPropertyName: 'Công suất sạc',
+    pimMode: 'filter',
+    status: 'Confirmed',
+    source: 'file_ref',
+    note: 'Ưu tiên 1 File tham chiếu: Công suất sạc dùng mã 34898',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    cmsCategoryId: '57',
+    pimAttributeCode: 'utilities_filter_master',
+    cmsPropertyId: '20639',
+    cmsPropertyName: 'Tiện ích',
+    pimMode: 'filter',
+    status: 'Confirmed',
+    source: 'file_ref',
+    note: 'Ưu tiên 1 File tham chiếu: Tiện ích Filter dùng mã 20639',
+    updatedAt: new Date().toISOString()
+  },
+  {
+    cmsCategoryId: '57',
+    pimAttributeCode: 'technologyutilities_tskt_master',
+    cmsPropertyId: '21148',
+    cmsPropertyName: 'Công nghệ/Tiện ích',
+    pimMode: 'tskt',
+    status: 'Confirmed',
+    source: 'file_ref',
+    note: 'Ưu tiên 1 File tham chiếu: Công nghệ/Tiện ích TSKT dùng mã 21148',
+    updatedAt: new Date().toISOString()
+  },
   {
     cmsCategoryId: '9499',
     pimAttributeCode: 'charging_power_filter_master',
@@ -179,17 +291,152 @@ export function saveCategoryMappings(mappings) {
   localStorage.setItem(STORAGE_KEYS.CATEGORY_MAPPINGS, JSON.stringify(mappings));
 }
 
+export function sanitizeAttributeMappings(mappings = []) {
+  if (!Array.isArray(mappings)) return [];
+  return mappings.map(rule => {
+    const catId = String(rule.cmsCategoryId || '').trim();
+    const pimCode = String(rule.pimAttributeCode || '').trim();
+
+    // RÀNG BUỘC NGHIỆP VỤ BẤT DI BẤT DỊCH (NGÀNH 57 - SẠC DỰ PHÒNG):
+    // Mã CMS 500 CHỈ DÙNG CHO FILTER (battery_capacity_filter_master)
+    // Mã CMS 23370 CHỈ DÙNG CHO TSKT (battery_capacity_tskt_master)
+    // Mã CMS 23352 CHỈ DÙNG CHO CỔNG RA FILTER (exit_gate_filter_master)
+    // Mã CMS 21149 CHỈ DÙNG CHO NGUỒN RA TSKT (output_tskt_master)
+    if (catId === '57') {
+      if (pimCode === 'battery_capacity_tskt_master' && String(rule.cmsPropertyId).trim() === '500') {
+        return {
+          ...rule,
+          cmsPropertyId: '23370',
+          cmsPropertyName: 'Dung lượng pin',
+          pimMode: 'tskt',
+          status: 'Confirmed',
+          source: 'file_ref',
+          originalP1Id: '23370',
+          originalP1Name: 'Dung lượng pin',
+          note: 'Quy tắc chuẩn: TSKT Dung lượng pin ngành 57 dùng mã 23370 (Mã 500 chỉ dùng cho Filter)',
+          updatedAt: new Date().toISOString()
+        };
+      }
+      if (pimCode === 'battery_capacity_filter_master') {
+        return {
+          ...rule,
+          cmsPropertyId: '500',
+          cmsPropertyName: 'Dung lượng pin',
+          pimMode: 'filter',
+          status: 'Confirmed',
+          note: 'Quy tắc chuẩn: Filter Dung lượng pin ngành 57 dùng mã 500',
+          updatedAt: new Date().toISOString()
+        };
+      }
+      if (pimCode === 'exit_gate_filter_master' && (String(rule.cmsPropertyId).trim() === '26138' || rule.source === 'priority2_accepted')) {
+        return {
+          ...rule,
+          cmsPropertyId: '23352',
+          cmsPropertyName: 'Cổng ra (Output)',
+          pimMode: 'filter',
+          status: 'Confirmed',
+          source: 'file_ref',
+          originalP1Id: '23352',
+          originalP1Name: 'Cổng ra (Output)',
+          note: 'File tham chiếu chuẩn (Ưu tiên 1): Cổng ra Filter dùng mã 23352',
+          updatedAt: new Date().toISOString()
+        };
+      }
+      if (pimCode === 'output_tskt_master' && (String(rule.cmsPropertyId).trim() === '26138' || rule.source === 'priority2_accepted')) {
+        return {
+          ...rule,
+          cmsPropertyId: '21149',
+          cmsPropertyName: 'Nguồn ra',
+          pimMode: 'tskt',
+          status: 'Confirmed',
+          source: 'file_ref',
+          originalP1Id: '21149',
+          originalP1Name: 'Nguồn ra',
+          note: 'File tham chiếu chuẩn (Ưu tiên 1): Nguồn ra TSKT dùng mã 21149',
+          updatedAt: new Date().toISOString()
+        };
+      }
+    }
+
+    // Đảm bảo pimMode chuẩn xác theo hậu tố PIM
+    let pimMode = rule.pimMode;
+    if (pimCode.includes('filter_master') || pimCode.includes('_filter_') || pimCode.endsWith('_filter') || pimCode.includes('_filter')) {
+      pimMode = 'filter';
+    } else if (
+      pimCode.includes('model') || 
+      pimCode.includes('product_line') || 
+      pimCode.includes('size_') || 
+      pimCode.includes('mass_') || 
+      pimCode.includes('color_')
+    ) {
+      pimMode = 'text';
+    } else if (pimCode.includes('tskt_master') || pimCode.includes('_tskt_') || pimCode.endsWith('_tskt')) {
+      pimMode = 'tskt';
+    }
+
+    return {
+      ...rule,
+      pimMode: pimMode || rule.pimMode || 'tskt'
+    };
+  });
+}
+
 export function getAttributeMappings() {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.ATTRIBUTE_MAPPINGS);
-    return raw ? JSON.parse(raw) : DEFAULT_ATTR_MAPPINGS;
+    const list = raw ? JSON.parse(raw) : DEFAULT_ATTR_MAPPINGS;
+    const sanitized = sanitizeAttributeMappings(list);
+    if (raw && JSON.stringify(sanitized) !== JSON.stringify(list)) {
+      saveAttributeMappings(sanitized);
+    }
+    return sanitized;
   } catch {
-    return DEFAULT_ATTR_MAPPINGS;
+    return sanitizeAttributeMappings(DEFAULT_ATTR_MAPPINGS);
   }
 }
 
 export function saveAttributeMappings(mappings) {
   localStorage.setItem(STORAGE_KEYS.ATTRIBUTE_MAPPINGS, JSON.stringify(mappings));
+}
+
+export function getValueMappings() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.VALUE_MAPPINGS);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+export function saveValueMappings(mappings) {
+  localStorage.setItem(STORAGE_KEYS.VALUE_MAPPINGS, JSON.stringify(mappings || {}));
+}
+
+export function saveSingleValueMapping({ key, cmsCategoryId, cmsPropertyId, rawText, valId, valName, source = 'smart_suggestion_accepted', reason = '' }) {
+  const current = getValueMappings();
+  const mapKey = key || `${cmsCategoryId}___${cmsPropertyId}___${String(rawText || '').trim().toLowerCase()}`;
+  current[mapKey] = {
+    key: mapKey,
+    cmsCategoryId: String(cmsCategoryId).trim(),
+    cmsPropertyId: String(cmsPropertyId).trim(),
+    rawText: String(rawText || '').trim(),
+    valId: String(valId).trim(),
+    valName: String(valName || '').trim(),
+    source,
+    reason,
+    confirmedAt: new Date().toISOString()
+  };
+  saveValueMappings(current);
+  return current;
+}
+
+export function removeValueMapping(key) {
+  const current = getValueMappings();
+  if (current[key]) {
+    delete current[key];
+    saveValueMappings(current);
+  }
+  return current;
 }
 
 export function getUserConfig() {
@@ -277,7 +524,7 @@ export function syncRulesFromMappingRef(mappingRefList = [], currentAttrs = [], 
     const key = attrKey(catId, pimCode);
     let pimMode = item.pimMode;
     if (!pimMode) {
-      if (pimCode.includes('_filter_') || pimCode.endsWith('_filter')) {
+      if (pimCode.includes('filter_master') || pimCode.includes('_filter_') || pimCode.endsWith('_filter') || pimCode.includes('_filter')) {
         pimMode = 'filter';
       } else if (
         pimCode.includes('model') || 
@@ -311,8 +558,15 @@ export function syncRulesFromMappingRef(mappingRefList = [], currentAttrs = [], 
     if (existingAttrMap.has(key)) {
       const idx = mergedAttrs.findIndex(a => attrKey(a.cmsCategoryId, a.pimAttributeCode) === key);
       if (idx !== -1) {
-        // If user already confirmed Priority 2, preserve their confirmed choice!
-        if (mergedAttrs[idx].source === 'priority2_accepted') {
+        // Special case: Ngành 57 battery_capacity_tskt_master không dùng 500, exit_gate không dùng 26138
+        const isCat57Misplaced = catId === '57' && (
+          (pimCode === 'battery_capacity_tskt_master' && String(mergedAttrs[idx].cmsPropertyId).trim() === '500') ||
+          (pimCode === 'exit_gate_filter_master' && String(mergedAttrs[idx].cmsPropertyId).trim() === '26138') ||
+          (pimCode === 'output_tskt_master' && String(mergedAttrs[idx].cmsPropertyId).trim() === '26138')
+        );
+
+        // If user already confirmed Priority 2, preserve their confirmed choice UNLESS it's an invalid rule
+        if (mergedAttrs[idx].source === 'priority2_accepted' && !isCat57Misplaced) {
           mergedAttrs[idx] = {
             ...mergedAttrs[idx],
             originalP1Id: cmsPropId,
@@ -368,7 +622,7 @@ export function syncRulesFromMappingRef(mappingRefList = [], currentAttrs = [], 
     }
   });
 
-  return { mergedAttrs, mergedCats };
+  return { mergedAttrs: sanitizeAttributeMappings(mergedAttrs), mergedCats };
 }
 
 /**

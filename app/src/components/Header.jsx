@@ -32,6 +32,18 @@ export default function Header({
     { id: 'export', step: 4, label: 'Xuất File CMS', isDone: Boolean(transformationResult?.validImportRows?.length) }
   ];
 
+  const tabInfoMap = {
+    upload: { title: 'Nạp File PIM', icon: HardDrive, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+    masterData: { title: 'Dữ Liệu', icon: Database, color: '#0284c7', bg: '#f0f9ff', border: '#bae6fd' },
+    preview: { title: 'Đối Soát & Xem Trước', icon: CheckCircle2, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+    export: { title: 'Xuất File CMS', icon: Sparkles, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
+    mapping: { title: 'Quy Tắc Đối Chiếu PIM ➔ CMS', icon: Layers, color: '#2563eb', bg: '#eff6ff', border: '#bfdbfe' },
+    pimDecoder: { title: 'Dịch Option PIM', icon: FileSpreadsheet, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' }
+  };
+
+  const currentTabInfo = tabInfoMap[activeTab] || tabInfoMap.preview;
+  const TabIcon = currentTabInfo.icon;
+
   return (
     <header style={{
       backgroundColor: '#ffffff',
@@ -47,107 +59,24 @@ export default function Header({
       zIndex: 40,
       boxShadow: '0 1px 2px rgba(0,0,0,0.03)'
     }}>
-      {/* Left: Interactive Workflow Progress Stepper (Replaces Duplicate Title) */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-        {activeTab === 'mapping' ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: '#eff6ff',
-              border: '1px solid #bfdbfe',
-              color: '#2563eb',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <Layers size={16} />
-            </div>
-            <div>
-              <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0f172a' }}>
-                Quy Tắc Đối Chiếu PIM ➔ CMS
-              </span>
-            </div>
-          </div>
-        ) : activeTab === 'pimDecoder' ? (
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '32px',
-              height: '32px',
-              borderRadius: '8px',
-              background: '#ecfdf5',
-              border: '1px solid #a7f3d0',
-              color: '#059669',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}>
-              <FileSpreadsheet size={16} />
-            </div>
-            <div>
-              <span style={{ fontSize: '0.92rem', fontWeight: 700, color: '#0f172a' }}>
-                Dịch Option PIM Ra Chữ
-              </span>
-            </div>
-          </div>
-        ) : (
-          <nav aria-label="Workflow Steps" style={{ display: 'flex', alignItems: 'center', gap: '3px', flexWrap: 'nowrap', overflowX: 'auto', whiteSpace: 'nowrap' }}>
-            {pipelineSteps.map((st, idx, arr) => {
-              const isActive = activeTab === st.id;
-
-              return (
-                <React.Fragment key={st.id}>
-                  <button
-                    type="button"
-                    onClick={() => setActiveTab && setActiveTab(st.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '5px 10px',
-                      borderRadius: '8px',
-                      fontSize: '0.78rem',
-                      fontWeight: isActive ? 700 : 500,
-                      cursor: 'pointer',
-                      border: isActive ? '1.5px solid #2563eb' : '1px solid transparent',
-                      background: isActive ? '#eff6ff' : st.isDone ? '#f0fdf4' : '#f8fafc',
-                      color: isActive ? '#1d4ed8' : st.isDone ? '#166534' : '#64748b',
-                      transition: 'all 0.15s ease',
-                      outline: 'none',
-                      whiteSpace: 'nowrap',
-                      flexShrink: 0
-                    }}
-                    title={`Chuyển tới Bước ${st.step}: ${st.label}`}
-                  >
-                    <span style={{
-                      width: '18px',
-                      height: '18px',
-                      borderRadius: '50%',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '0.66rem',
-                      fontWeight: 700,
-                      background: isActive ? '#2563eb' : st.isDone ? '#10b981' : '#cbd5e1',
-                      color: isActive || st.isDone ? '#ffffff' : '#475569',
-                      flexShrink: 0
-                    }}>
-                      {st.isDone ? '✓' : st.step}
-                    </span>
-                    <span style={{ whiteSpace: 'nowrap' }}>{st.label}</span>
-                  </button>
-
-                  {idx < arr.length - 1 && (
-                    <span style={{ color: '#cbd5e1', fontSize: '0.72rem', margin: '0 2px', userSelect: 'none', flexShrink: 0 }}>
-                      ➔
-                    </span>
-                  )}
-                </React.Fragment>
-              );
-            })}
-          </nav>
-        )}
+      {/* Left: Clean Active Screen Title (Spacious & Minimal) */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{
+          width: '32px',
+          height: '32px',
+          borderRadius: '8px',
+          background: currentTabInfo.bg,
+          border: `1px solid ${currentTabInfo.border}`,
+          color: currentTabInfo.color,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <TabIcon size={16} />
+        </div>
+        <span style={{ fontSize: '0.94rem', fontWeight: 700, color: '#0f172a' }}>
+          {currentTabInfo.title}
+        </span>
       </div>
 
       {/* Right Side Status & Quick Actions */}

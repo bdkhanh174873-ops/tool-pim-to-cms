@@ -70,8 +70,16 @@ export default function FileUploadTab({
 
   // Open Preview Modal for PIM products
   const openPreview = (fileObj = null) => {
-    const targetData = fileObj ? fileObj : pimProductData;
+    let targetData = fileObj ? fileObj : pimProductData;
     if (!targetData) return;
+
+    if (fileObj && !fileObj.labelsMap && fileObj.headers && fileObj.labels) {
+      const labelsMap = {};
+      fileObj.headers.forEach((h, idx) => {
+        if (fileObj.labels[idx]) labelsMap[h] = fileObj.labels[idx];
+      });
+      targetData = { ...fileObj, labelsMap };
+    }
 
     setPreviewModalConfig({
       isOpen: true,
@@ -86,51 +94,6 @@ export default function FileUploadTab({
   return (
     <div className="animate-fade-in" style={{ padding: '0 28px 36px 28px' }}>
 
-      {/* Top Banner: Master Data Quick Status */}
-      <div 
-        className="glass-panel"
-        style={{
-          padding: '12px 20px',
-          marginBottom: '20px',
-          background: readyMastersCount === 6 ? '#f0fdf4' : '#eff6ff',
-          borderColor: readyMastersCount === 6 ? '#bbf7d0' : '#bfdbfe',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          gap: '12px'
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{
-            width: '32px',
-            height: '32px',
-            borderRadius: '8px',
-            background: readyMastersCount === 6 ? '#dcfce7' : '#dbeafe',
-            color: readyMastersCount === 6 ? '#15803d' : '#1d4ed8',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center'
-          }}>
-            <Database size={17} />
-          </div>
-          <div>
-            <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#0f172a' }}>
-              Dữ Liệu Nền Tảng: <span style={{ color: readyMastersCount === 6 ? '#15803d' : '#2563eb' }}>{readyMastersCount}/6 nguồn sẵn sàng</span>
-            </div>
-          </div>
-        </div>
-
-        <button
-          onClick={onOpenMasterData}
-          className="btn btn-secondary"
-          style={{ fontSize: '0.78rem', padding: '5px 12px', background: '#ffffff', color: '#1d4ed8', borderColor: '#bfdbfe' }}
-        >
-          <span>Quản lý dữ liệu nền</span>
-          <ArrowRight size={13} />
-        </button>
-      </div>
-
       {/* Section Header */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px', marginBottom: '14px' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -140,17 +103,6 @@ export default function FileUploadTab({
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <button
-            onClick={onLoadSamplePimProduct}
-            disabled={isLoading}
-            className="btn btn-secondary"
-            style={{ borderColor: '#bfdbfe', backgroundColor: '#eff6ff', color: '#1d4ed8', fontSize: '0.8rem' }}
-            title="Nạp nhanh file mẫu 528 sản phẩm Adapter"
-          >
-            <Sparkles size={14} />
-            <span>⚡ Nạp mẫu Adapter</span>
-          </button>
-
           {pimFiles.length > 0 && (
             <button
               onClick={() => pimProductInputRef.current?.click()}
@@ -176,60 +128,60 @@ export default function FileUploadTab({
       />
 
       {pimFiles.length === 0 ? (
-        /* Empty State: Airy, Clean Drag & Drop Zone */
+        /* Empty State: Airy, Tall Square Drag & Drop Zone */
         <div 
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDropPim}
           className="glass-panel" 
           style={{ 
-            padding: '50px 24px', 
+            width: '100%',
+            minHeight: '460px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '48px 32px', 
             textAlign: 'center', 
-            border: '2px dashed #3b82f6', 
+            border: '2px dashed #93c5fd', 
             background: 'linear-gradient(180deg, #ffffff 0%, #f0f7ff 100%)', 
-            boxShadow: '0 4px 20px rgba(37, 99, 235, 0.06)', 
+            boxShadow: '0 4px 20px rgba(37, 99, 235, 0.05)', 
             backgroundColor: '#ffffff',
             borderRadius: '16px',
             position: 'relative'
           }}
         >
-          <div style={{ maxWidth: '520px', margin: '0 auto' }}>
+          <div style={{ maxWidth: '420px', width: '100%', margin: '0 auto' }}>
             <div style={{ 
-              width: '60px', 
-              height: '60px', 
-              borderRadius: '16px', 
+              width: '76px', 
+              height: '76px', 
+              borderRadius: '20px', 
               background: '#eff6ff', 
               color: '#2563eb', 
               border: '1px solid #bfdbfe', 
               display: 'flex', 
               alignItems: 'center', 
               justifyContent: 'center', 
-              margin: '0 auto 14px auto',
-              boxShadow: '0 2px 8px rgba(37, 99, 235, 0.15)'
+              margin: '0 auto 20px auto',
+              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.15)'
             }}>
-              <UploadCloud size={30} />
+              <UploadCloud size={38} />
             </div>
             
-            <h3 style={{ fontSize: '1.14rem', fontWeight: 700, color: '#0f172a', marginBottom: '18px' }}>
+            <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#0f172a', marginBottom: '8px' }}>
               Kéo thả file PIM sản phẩm vào đây
             </h3>
+            <p style={{ fontSize: '0.82rem', color: '#64748b', margin: '0 0 24px 0' }}>
+              Hỗ trợ định dạng bảng tính Excel (.xlsx, .xls)
+            </p>
             
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               <button
                 onClick={() => pimProductInputRef.current?.click()}
                 className="btn btn-primary"
-                style={{ padding: '9px 22px', fontSize: '0.84rem' }}
+                style={{ padding: '12px 28px', fontSize: '0.9rem', borderRadius: '10px' }}
               >
-                <FolderPlus size={16} />
+                <FolderPlus size={18} />
                 <span>Chọn file PIM từ máy tính (.xlsx)</span>
-              </button>
-
-              <button
-                onClick={onLoadSamplePimProduct}
-                className="btn btn-secondary"
-                style={{ padding: '9px 18px', fontSize: '0.84rem' }}
-              >
-                <Sparkles size={14} color="#2563eb" />
-                <span>Nạp file mẫu kiểm thử</span>
               </button>
             </div>
           </div>
@@ -443,15 +395,6 @@ export default function FileUploadTab({
           {/* Bottom Actions for Multi-file */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <button
-                onClick={() => pimProductInputRef.current?.click()}
-                className="btn btn-secondary"
-                style={{ fontSize: '0.8rem', padding: '7px 14px' }}
-              >
-                <Plus size={14} />
-                <span>Nạp thêm file PIM</span>
-              </button>
-
               <button
                 onClick={() => openPreview(null)}
                 className="btn btn-secondary"

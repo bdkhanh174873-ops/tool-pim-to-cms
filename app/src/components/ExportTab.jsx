@@ -238,17 +238,7 @@ export default function ExportTab({
     }
   };
 
-  // Sample ID test filler
-  const handleLoadSampleTargetIds = () => {
-    const samples = datasetProductInfo.sampleIds;
-    if (samples.length === 0) {
-      notify.warning('Chưa có ID sản phẩm nào trong dữ liệu PIM để nạp mẫu.');
-      return;
-    }
-    const sampleText = samples.join('\n');
-    setPastedIdText(sampleText);
-    notify.info(`Đã nạp ${samples.length} ID mẫu từ dữ liệu đang có để thử nghiệm!`);
-  };
+
 
   // Clear whitelist IDs
   const handleClearTargetIds = () => {
@@ -336,123 +326,74 @@ export default function ExportTab({
   };
 
   return (
-    <div className="animate-fade-in" style={{ padding: '0 28px 36px 28px', maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="animate-fade-in" style={{ padding: '0 28px 36px 28px' }}>
       
-      {/* Top Header Card */}
-      <div className="glass-panel" style={{ padding: '20px 24px', marginBottom: '22px' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
-          <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
-              Xuất File Import CMS
-            </h2>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-              Tùy chọn xuất toàn bộ file hoặc lọc chính xác theo danh sách ID sản phẩm chỉ định
-            </div>
-          </div>
-
-          {/* User Info Capsule with Fast Site Switcher & Settings Toggle */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px',
-              padding: '6px 12px',
-              borderRadius: '8px',
-              background: '#f8fafc',
-              border: '1px solid #e2e8f0',
-              fontSize: '0.78rem',
-              color: '#334155'
-            }}>
-              <User size={14} color="#2563eb" />
-              <span>Người tạo: <b>{userConfig?.username || '174873'}</b></span>
-              <span style={{ color: '#cbd5e1' }}>•</span>
-              
-              {/* Quick Site Selector in Top Capsule */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
-                <span style={{ color: '#64748b', fontWeight: 600 }}>Site ID:</span>
-                <select
-                  value={userConfig?.siteId || '2'}
-                  onChange={e => handleConfigChange('siteId', e.target.value)}
-                  style={{
-                    fontSize: '0.78rem',
-                    fontWeight: 700,
-                    padding: '3px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid #93c5fd',
-                    background: '#eff6ff',
-                    color: '#1d4ed8',
-                    cursor: 'pointer',
-                    outline: 'none'
-                  }}
-                  title="Chọn sàn thương mại điện tử xuất file"
-                >
-                  <option value="2">2 - Điện Máy Xanh (Mặc định)</option>
-                  <option value="1">1 - Thế Giới Di Động</option>
-                  <option value="1,2">1,2 - Cả TGDĐ & ĐMX</option>
-                  <option value="1,2,16">1,2,16 - TGDĐ, ĐMX & TopZone</option>
-                  {!['1', '2', '1,2', '1,2,16'].includes(userConfig?.siteId) && (
-                    <option value={userConfig?.siteId}>{userConfig?.siteId} (Tùy chỉnh)</option>
-                  )}
-                </select>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className="btn btn-secondary"
-              style={{ padding: '6px 10px', fontSize: '0.78rem', display: 'flex', alignItems: 'center', gap: '5px' }}
-              title="Mở cài đặt thông tin người dùng và tham số xuất"
-            >
-              <Settings size={13} />
-              <span>{showSettings ? 'Đóng cài đặt' : 'Cài đặt'}</span>
-              {showSettings ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-            </button>
-          </div>
+      {/* Cài Đặt Người Dùng & Tham Số Xuất CMS */}
+      <div className="glass-panel" style={{ padding: '20px 24px', marginBottom: '22px', backgroundColor: '#ffffff', border: '1px solid var(--border-subtle)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+          <Settings size={17} color="#2563eb" />
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
+            Cài Đặt Người Dùng & Tham Số Xuất CMS
+          </h3>
         </div>
-      </div>
 
-      {/* Collapsible Settings Panel (Clean, Friendly & Unobtrusive) */}
-      {showSettings && (
-        <div className="glass-panel" style={{ padding: '20px 24px', marginBottom: '22px', backgroundColor: '#f8fafc', border: '1px solid var(--border-blue)' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
-            <Settings size={16} color="#2563eb" />
-            <h4 style={{ fontSize: '0.9rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-              Cài Đặt Người Dùng & Tham Số Xuất CMS
-            </h4>
+        {/* 1. Tham số cho file import sản phẩm */}
+        <div style={{ marginBottom: '18px' }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#2563eb' }}></span>
+            Tham số cho file import sản phẩm
           </div>
 
-          {/* User Fields Grid */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px', marginBottom: '16px' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '14px' }}>
             <div>
-              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                Mã nhân viên tạo (USERNAME) *
+              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 600, color: '#475569', marginBottom: '5px' }}>
+                Mã nhân viên <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <input
                 type="text"
+                required
                 value={userConfig?.username || ''}
                 onChange={e => handleConfigChange('username', e.target.value)}
                 placeholder="174873"
-                style={{ width: '100%', fontSize: '0.8rem', padding: '6px 10px' }}
+                style={{
+                  width: '100%',
+                  fontSize: '0.8rem',
+                  padding: '7px 10px',
+                  borderRadius: '7px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#475569',
+                  outline: 'none'
+                }}
               />
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                Họ và tên (FULLNAME) *
+              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 600, color: '#475569', marginBottom: '5px' }}>
+                Họ và tên <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <input
                 type="text"
+                required
                 value={userConfig?.fullname || ''}
                 onChange={e => handleConfigChange('fullname', e.target.value)}
                 placeholder="Nguyễn Văn A"
-                style={{ width: '100%', fontSize: '0.8rem', padding: '6px 10px' }}
+                style={{
+                  width: '100%',
+                  fontSize: '0.8rem',
+                  padding: '7px 10px',
+                  borderRadius: '7px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#475569',
+                  outline: 'none'
+                }}
               />
             </div>
 
-            {/* Site ID Selection Dropdown */}
             <div>
-              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                Chọn Site ID xuất file *
+              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 600, color: '#475569', marginBottom: '5px' }}>
+                Chọn site <span style={{ color: '#ef4444' }}>*</span>
               </label>
               <select
                 value={userConfig?.siteId || '2'}
@@ -461,11 +402,11 @@ export default function ExportTab({
                   width: '100%',
                   fontSize: '0.8rem',
                   padding: '7px 10px',
-                  borderRadius: '8px',
-                  border: '1.5px solid #93c5fd',
-                  background: '#ffffff',
-                  color: '#1e3a8a',
-                  fontWeight: 600,
+                  borderRadius: '7px',
+                  border: '1px solid #cbd5e1',
+                  background: '#f8fafc',
+                  color: '#475569',
+                  fontWeight: 500,
                   cursor: 'pointer',
                   outline: 'none'
                 }}
@@ -481,94 +422,101 @@ export default function ExportTab({
             </div>
 
             <div>
-              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 600, color: '#334155', marginBottom: '4px' }}>
-                Ngôn ngữ (LANGUAGEID)
+              <label style={{ display: 'block', fontSize: '0.76rem', fontWeight: 600, color: '#475569', marginBottom: '5px' }}>
+                Ngôn ngữ
               </label>
               <input
                 type="text"
                 value={userConfig?.languageId || 'vi-VN'}
                 disabled
-                style={{ width: '100%', fontSize: '0.8rem', padding: '6px 10px', background: '#f1f5f9', color: '#64748b' }}
+                style={{
+                  width: '100%',
+                  fontSize: '0.8rem',
+                  padding: '7px 10px',
+                  borderRadius: '7px',
+                  border: '1px solid #e2e8f0',
+                  background: '#f1f5f9',
+                  color: '#94a3b8'
+                }}
               />
             </div>
           </div>
+        </div>
 
-          {/* Friendly Presets for New Values Excel */}
-          <div style={{ paddingTop: '14px', borderTop: '1px solid #e2e8f0' }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-              <div style={{ fontSize: '0.78rem', fontWeight: 600, color: '#334155' }}>
-                Thông số mặc định (Tạo giá trị mới CMS)
-              </div>
+        {/* 2. Tham số cho file import giá trị */}
+        <div style={{ paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
+          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: '#1e293b', marginBottom: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#059669' }}></span>
+            Tham số cho file import giá trị
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
+            <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                Thứ tự hiển thị <span style={{ fontWeight: 400, color: '#94a3b8' }}>(Displayorder)</span>:
+              </span>
+              <input
+                type="number"
+                value={valueImportConfig.displayOrder ?? 3}
+                onChange={e => handleValueConfigChange('displayOrder', e.target.value)}
+                style={{ width: '100%', fontSize: '0.78rem', padding: '5px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#475569' }}
+                placeholder="Mặc định: 3"
+              />
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '10px' }}>
-              <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
-                  Thứ tự hiển thị <span style={{ fontWeight: 400, color: '#94a3b8' }}>(Displayorder)</span>:
-                </span>
-                <input
-                  type="number"
-                  value={valueImportConfig.displayOrder ?? 3}
-                  onChange={e => handleValueConfigChange('displayOrder', e.target.value)}
-                  style={{ width: '100%', fontSize: '0.78rem', padding: '5px 8px' }}
-                  placeholder="Mặc định: 3"
-                />
-              </div>
+            <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                Bộ lọc tìm kiếm <span style={{ fontWeight: 400, color: '#94a3b8' }}>(Issearch)</span>:
+              </span>
+              <select
+                value={valueImportConfig.isSearch ?? 0}
+                onChange={e => handleValueConfigChange('isSearch', Number(e.target.value))}
+                style={{ width: '100%', fontSize: '0.78rem', padding: '5px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#475569' }}
+              >
+                <option value={0}>0 - Không làm bộ lọc</option>
+                <option value={1}>1 - Cho phép lọc</option>
+              </select>
+            </div>
 
-              <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
-                  Bộ lọc tìm kiếm <span style={{ fontWeight: 400, color: '#94a3b8' }}>(Issearch)</span>:
-                </span>
-                <select
-                  value={valueImportConfig.isSearch ?? 0}
-                  onChange={e => handleValueConfigChange('isSearch', Number(e.target.value))}
-                  style={{ width: '100%', fontSize: '0.78rem', padding: '5px 8px' }}
-                >
-                  <option value={0}>0 - Không làm bộ lọc (Mặc định)</option>
-                  <option value={1}>1 - Cho phép lọc</option>
-                </select>
-              </div>
+            <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                Trang so sánh SP <span style={{ fontWeight: 400, color: '#94a3b8' }}>(Comparevalue)</span>:
+              </span>
+              <select
+                value={valueImportConfig.compareValue ?? 0}
+                onChange={e => handleValueConfigChange('compareValue', Number(e.target.value))}
+                style={{ width: '100%', fontSize: '0.78rem', padding: '5px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#475569' }}
+              >
+                <option value={0}>0 - Không so sánh</option>
+                <option value={1}>1 - Có đưa vào so sánh</option>
+              </select>
+            </div>
 
-              <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
-                  Trang so sánh SP <span style={{ fontWeight: 400, color: '#94a3b8' }}>(Comparevalue)</span>:
-                </span>
-                <select
-                  value={valueImportConfig.compareValue ?? 0}
-                  onChange={e => handleValueConfigChange('compareValue', Number(e.target.value))}
-                  style={{ width: '100%', fontSize: '0.78rem', padding: '5px 8px' }}
-                >
-                  <option value={0}>0 - Không so sánh (Mặc định)</option>
-                  <option value={1}>1 - Có đưa vào so sánh</option>
-                </select>
-              </div>
-
-              <div style={{ background: '#ffffff', padding: '8px 10px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#475569', display: 'block', marginBottom: '4px' }}>
-                  Gán vào sản phẩm <span style={{ fontWeight: 400, color: '#94a3b8' }}>(Isexistpro)</span>:
-                </span>
-                <select
-                  value={valueImportConfig.isExistPro ?? 0}
-                  onChange={e => handleValueConfigChange('isExistPro', Number(e.target.value))}
-                  style={{ width: '100%', fontSize: '0.78rem', padding: '5px 8px' }}
-                >
-                  <option value={0}>0 - Chưa có SP (Mặc định)</option>
-                  <option value={1}>1 - Đã có sản phẩm</option>
-                </select>
-              </div>
+            <div style={{ background: '#f8fafc', padding: '8px 12px', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 600, color: '#64748b', display: 'block', marginBottom: '4px' }}>
+                Gán vào sản phẩm <span style={{ fontWeight: 400, color: '#94a3b8' }}>(Isexistpro)</span>:
+              </span>
+              <select
+                value={valueImportConfig.isExistPro ?? 0}
+                onChange={e => handleValueConfigChange('isExistPro', Number(e.target.value))}
+                style={{ width: '100%', fontSize: '0.78rem', padding: '5px 8px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#ffffff', color: '#475569' }}
+              >
+                <option value={0}>0 - Chưa có SP</option>
+                <option value={1}>1 - Đã có sản phẩm</option>
+              </select>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
-      {/* SMART EXPORT SCOPE CARD: TOÀN BỘ VS DANH SÁCH ID CHỈ ĐỊNH */}
-      <div className="glass-panel" style={{ padding: '22px 24px', marginBottom: '22px', backgroundColor: '#ffffff', border: '1.5px solid #cbd5e1' }}>
+      {/* SMART EXPORT SCOPE CARD */}
+      <div className="glass-panel" style={{ padding: '20px 24px', marginBottom: '22px', backgroundColor: '#ffffff', border: '1px solid var(--border-subtle)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              width: '36px',
-              height: '36px',
-              borderRadius: '10px',
+              width: '32px',
+              height: '32px',
+              borderRadius: '8px',
               background: exportScope === 'whitelist' ? '#eff6ff' : '#f1f5f9',
               color: exportScope === 'whitelist' ? '#2563eb' : '#475569',
               display: 'flex',
@@ -576,15 +524,12 @@ export default function ExportTab({
               justifyContent: 'center',
               border: exportScope === 'whitelist' ? '1px solid #bfdbfe' : '1px solid #cbd5e1'
             }}>
-              <ListFilter size={20} />
+              <ListFilter size={18} />
             </div>
             <div>
               <h3 style={{ fontSize: '1rem', fontWeight: 700, color: '#0f172a', margin: 0 }}>
-                Phương Án Phạm Vi Xuất Dữ Liệu
+                Xuất dữ liệu
               </h3>
-              <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '2px' }}>
-                Hỗ trợ xuất toàn bộ file PIM hoặc chỉ lọc chính xác các ID sản phẩm bạn cần xử lý
-              </div>
             </div>
           </div>
 
@@ -633,7 +578,7 @@ export default function ExportTab({
               boxShadow: exportScope === 'all' ? '0 2px 6px rgba(37,99,235,0.12)' : 'none',
               transition: 'all 0.15s ease',
               display: 'flex',
-              alignItems: 'flex-start',
+              alignItems: 'center',
               gap: '12px'
             }}
           >
@@ -642,15 +587,10 @@ export default function ExportTab({
               name="exportScopeOption" 
               checked={exportScope === 'all'} 
               onChange={() => {}} 
-              style={{ marginTop: '3px', accentColor: '#2563eb' }}
+              style={{ accentColor: '#2563eb' }}
             />
-            <div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: exportScope === 'all' ? '#1d4ed8' : '#1e293b' }}>
-                Phương án 1: Xuất toàn bộ file nạp vào
-              </div>
-              <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '3px' }}>
-                Xuất tất cả {datasetProductInfo.totalDistinctProducts} sản phẩm ({validRowsCount.toLocaleString()} dòng CMS hợp lệ) đang có trong file PIM.
-              </div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: exportScope === 'all' ? '#1d4ed8' : '#1e293b' }}>
+              Phương án 1: Xuất toàn bộ file nạp vào
             </div>
           </div>
 
@@ -664,12 +604,12 @@ export default function ExportTab({
               padding: '14px 16px',
               borderRadius: '10px',
               cursor: 'pointer',
-              border: exportScope === 'whitelist' ? '2px solid #059669' : '1px solid #e2e8f0',
-              background: exportScope === 'whitelist' ? '#ecfdf5' : '#ffffff',
-              boxShadow: exportScope === 'whitelist' ? '0 2px 6px rgba(5,150,105,0.12)' : 'none',
+              border: exportScope === 'whitelist' ? '1.5px solid #2563eb' : '1px solid #e2e8f0',
+              background: exportScope === 'whitelist' ? '#eff6ff' : '#ffffff',
+              boxShadow: exportScope === 'whitelist' ? '0 2px 6px rgba(37,99,235,0.08)' : 'none',
               transition: 'all 0.15s ease',
               display: 'flex',
-              alignItems: 'flex-start',
+              alignItems: 'center',
               gap: '12px'
             }}
           >
@@ -678,15 +618,10 @@ export default function ExportTab({
               name="exportScopeOption" 
               checked={exportScope === 'whitelist'} 
               onChange={() => {}} 
-              style={{ marginTop: '3px', accentColor: '#059669' }}
+              style={{ accentColor: '#2563eb' }}
             />
-            <div>
-              <div style={{ fontSize: '0.88rem', fontWeight: 700, color: exportScope === 'whitelist' ? '#065f46' : '#1e293b' }}>
-                Phương án 2: Xuất theo ID
-              </div>
-              <div style={{ fontSize: '0.76rem', color: '#64748b', marginTop: '3px' }}>
-                Dán text hoặc nạp file Excel 1 cột ID. Hệ thống chỉ xuất dữ liệu thuộc các ID được cung cấp, loại bỏ toàn bộ các ID khác.
-              </div>
+            <div style={{ fontSize: '0.88rem', fontWeight: 700, color: exportScope === 'whitelist' ? '#1d4ed8' : '#1e293b' }}>
+              Phương án 2: Xuất theo ID
             </div>
           </div>
 
@@ -695,35 +630,43 @@ export default function ExportTab({
         {/* INTERACTIVE WHITELIST INPUT & MATCHING PANEL (When Phương án 2 is selected) */}
         {exportScope === 'whitelist' && (
           <div style={{
-            background: '#f8fafc',
-            border: '1.5px solid #86efac',
+            background: '#ffffff',
+            border: '1px solid #e2e8f0',
             borderRadius: '12px',
-            padding: '16px 20px',
-            marginTop: '12px'
+            padding: '18px 20px',
+            marginTop: '14px',
+            boxShadow: '0 1px 3px rgba(0, 0, 0, 0.03)'
           }}>
             
             {/* Sub-tabs for input: Dán Data vs Nạp Excel 1 Cột */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px', marginBottom: '14px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <div style={{
+                display: 'inline-flex',
+                background: '#f1f5f9',
+                padding: '3px',
+                borderRadius: '8px',
+                border: '1px solid #e2e8f0'
+              }}>
                 <button
                   type="button"
                   onClick={() => setWhitelistInputMode('paste')}
                   style={{
                     padding: '6px 14px',
-                    borderRadius: '7px',
+                    borderRadius: '6px',
                     fontSize: '0.8rem',
-                    fontWeight: whitelistInputMode === 'paste' ? 700 : 500,
-                    background: whitelistInputMode === 'paste' ? '#059669' : '#ffffff',
-                    color: whitelistInputMode === 'paste' ? '#ffffff' : '#475569',
-                    border: '1px solid #cbd5e1',
+                    fontWeight: whitelistInputMode === 'paste' ? 600 : 500,
+                    background: whitelistInputMode === 'paste' ? '#ffffff' : 'transparent',
+                    color: whitelistInputMode === 'paste' ? '#0f172a' : '#64748b',
+                    border: 'none',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
+                    boxShadow: whitelistInputMode === 'paste' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <ClipboardPaste size={14} />
+                  <ClipboardPaste size={14} color={whitelistInputMode === 'paste' ? '#2563eb' : '#64748b'} />
                   <span>Cách 1: Dán trực tiếp danh sách ID</span>
                 </button>
 
@@ -732,49 +675,37 @@ export default function ExportTab({
                   onClick={() => setWhitelistInputMode('excel')}
                   style={{
                     padding: '6px 14px',
-                    borderRadius: '7px',
+                    borderRadius: '6px',
                     fontSize: '0.8rem',
-                    fontWeight: whitelistInputMode === 'excel' ? 700 : 500,
-                    background: whitelistInputMode === 'excel' ? '#059669' : '#ffffff',
-                    color: whitelistInputMode === 'excel' ? '#ffffff' : '#475569',
-                    border: '1px solid #cbd5e1',
+                    fontWeight: whitelistInputMode === 'excel' ? 600 : 500,
+                    background: whitelistInputMode === 'excel' ? '#ffffff' : 'transparent',
+                    color: whitelistInputMode === 'excel' ? '#0f172a' : '#64748b',
+                    border: 'none',
                     cursor: 'pointer',
                     display: 'inline-flex',
                     alignItems: 'center',
                     gap: '6px',
+                    boxShadow: whitelistInputMode === 'excel' ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <FileSpreadsheet size={14} />
+                  <FileSpreadsheet size={14} color={whitelistInputMode === 'excel' ? '#2563eb' : '#64748b'} />
                   <span>Cách 2: Nạp file Excel 1 cột ID</span>
                 </button>
               </div>
 
-              {/* Action Buttons: Dán clipboard, Mẫu, Xóa */}
+              {/* Action Buttons: Dán clipboard, Xóa */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 {whitelistInputMode === 'paste' && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={handlePasteFromClipboard}
-                      className="btn btn-secondary"
-                      style={{ padding: '5px 10px', fontSize: '0.74rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                    >
-                      <ClipboardPaste size={13} color="#2563eb" />
-                      <span>Dán từ Clipboard</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={handleLoadSampleTargetIds}
-                      className="btn btn-secondary"
-                      style={{ padding: '5px 10px', fontSize: '0.74rem', display: 'inline-flex', alignItems: 'center', gap: '4px' }}
-                      title="Nạp nhanh các ID từ dữ liệu PIM đang mở để thử nghiệm xuất"
-                    >
-                      <Sparkles size={13} color="#059669" />
-                      <span>Nạp mẫu ID có sẵn</span>
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    onClick={handlePasteFromClipboard}
+                    className="btn btn-secondary"
+                    style={{ padding: '6px 12px', fontSize: '0.76rem', display: 'inline-flex', alignItems: 'center', gap: '5px' }}
+                  >
+                    <ClipboardPaste size={13} color="#2563eb" />
+                    <span>Dán từ Clipboard</span>
+                  </button>
                 )}
 
                 {activeRawIds.length > 0 && (
@@ -782,8 +713,8 @@ export default function ExportTab({
                     type="button"
                     onClick={handleClearTargetIds}
                     style={{
-                      padding: '5px 10px',
-                      fontSize: '0.74rem',
+                      padding: '6px 12px',
+                      fontSize: '0.76rem',
                       background: '#fff1f2',
                       border: '1px solid #fecdd3',
                       color: '#be123c',
@@ -812,16 +743,17 @@ export default function ExportTab({
                   rows={4}
                   style={{
                     width: '100%',
-                    padding: '10px 12px',
+                    padding: '12px 14px',
                     borderRadius: '8px',
-                    border: '1.5px solid #cbd5e1',
+                    border: '1px solid #cbd5e1',
                     fontSize: '0.82rem',
                     fontFamily: 'var(--font-mono)',
-                    color: '#0f172a',
-                    background: '#ffffff',
+                    color: '#334155',
+                    background: '#f8fafc',
                     outline: 'none',
                     resize: 'vertical',
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
+                    lineHeight: 1.5
                   }}
                 />
               </div>
@@ -841,25 +773,25 @@ export default function ExportTab({
                 <div
                   onClick={() => fileInputRef.current?.click()}
                   style={{
-                    border: '2px dashed #94a3b8',
+                    border: '1.5px dashed #cbd5e1',
                     borderRadius: '10px',
-                    padding: '20px',
+                    padding: '24px 20px',
                     textAlign: 'center',
-                    background: '#ffffff',
+                    background: '#f8fafc',
                     cursor: 'pointer',
                     transition: 'all 0.15s ease'
                   }}
                 >
-                  <UploadCloud size={28} color="#059669" style={{ margin: '0 auto 6px auto' }} />
-                  <div style={{ fontSize: '0.84rem', fontWeight: 700, color: '#1e293b' }}>
+                  <UploadCloud size={28} color="#2563eb" style={{ margin: '0 auto 6px auto' }} />
+                  <div style={{ fontSize: '0.84rem', fontWeight: 600, color: '#1e293b' }}>
                     {uploadedExcelName ? `Đã chọn file: ${uploadedExcelName}` : 'Bấm vào đây để chọn file Excel danh sách ID (1 cột)'}
                   </div>
-                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '2px' }}>
-                    Chỉ cần 1 cột chứa ID sản phẩm (PRODUCTID hoặc Model code). Tự động bỏ qua dòng tiêu đề.
+                  <div style={{ fontSize: '0.74rem', color: '#64748b', marginTop: '3px' }}>
+                    Chỉ cần 1 cột chứa ID sản phẩm (PRODUCTID hoặc Model code). Tự động nhận diện và bỏ dòng tiêu đề.
                   </div>
                   {uploadedIds.length > 0 && (
-                    <div style={{ marginTop: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#dcfce7', color: '#15803d', padding: '3px 10px', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 700 }}>
-                      <Check size={14} strokeWidth={3} />
+                    <div style={{ marginTop: '10px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: '#ecfdf5', color: '#047857', border: '1px solid #a7f3d0', padding: '4px 12px', borderRadius: '6px', fontSize: '0.76rem', fontWeight: 600 }}>
+                      <Check size={14} strokeWidth={2.5} />
                       <span>Đã nạp thành công {uploadedIds.length} ID từ file</span>
                     </div>
                   )}
@@ -869,20 +801,20 @@ export default function ExportTab({
 
             {/* SMART MATCHING METRICS & ANALYTICS BAR */}
             {activeRawIds.length > 0 && (
-              <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #cbd5e1' }}>
+              <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #e2e8f0' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
                   
                   {/* 3 Metric Badges */}
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                     {/* Badge 1: Tổng ID cung cấp */}
-                    <div style={{ padding: '6px 12px', background: '#ffffff', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '0.78rem' }}>
+                    <div style={{ padding: '5px 12px', background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '6px', fontSize: '0.78rem' }}>
                       <span style={{ color: '#64748b' }}>Tổng ID nạp vào: </span>
                       <b style={{ color: '#0f172a' }}>{targetIdAnalysis.totalTargetIds} ID</b>
                     </div>
 
                     {/* Badge 2: Khớp trong dữ liệu PIM */}
-                    <div style={{ padding: '6px 12px', background: '#ecfdf5', border: '1.5px solid #86efac', borderRadius: '8px', fontSize: '0.78rem' }}>
-                      <span style={{ color: '#065f46' }}>✅ Khớp trong PIM: </span>
+                    <div style={{ padding: '5px 12px', background: '#ecfdf5', border: '1px solid #a7f3d0', borderRadius: '6px', fontSize: '0.78rem' }}>
+                      <span style={{ color: '#065f46' }}>Khớp trong PIM: </span>
                       <b style={{ color: '#047857' }}>{targetIdAnalysis.matchedIds.length} ID</b>
                       <span style={{ color: '#059669', marginLeft: '4px', fontWeight: 600 }}>
                         ➔ {targetIdAnalysis.filteredValidRows.length} dòng CMS
@@ -893,12 +825,12 @@ export default function ExportTab({
                     {targetIdAnalysis.unmatchedIds.length > 0 && (
                       <div 
                         onClick={() => setShowUnmatchedList(!showUnmatchedList)}
-                        style={{ padding: '6px 12px', background: '#fff1f2', border: '1.5px solid #fecdd3', borderRadius: '8px', fontSize: '0.78rem', cursor: 'pointer' }}
+                        style={{ padding: '5px 12px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '6px', fontSize: '0.78rem', cursor: 'pointer' }}
                         title="Bấm để xem danh sách các ID không có trong file PIM hiện tại"
                       >
-                        <span style={{ color: '#be123c' }}>⚠️ Không có trong PIM: </span>
-                        <b style={{ color: '#9f1239' }}>{targetIdAnalysis.unmatchedIds.length} ID</b>
-                        <span style={{ fontSize: '0.7rem', color: '#e11d48', marginLeft: '4px', textDecoration: 'underline' }}>
+                        <span style={{ color: '#991b1b' }}>Không có trong PIM: </span>
+                        <b style={{ color: '#b91c1c' }}>{targetIdAnalysis.unmatchedIds.length} ID</b>
+                        <span style={{ fontSize: '0.72rem', color: '#dc2626', marginLeft: '6px', textDecoration: 'underline' }}>
                           ({showUnmatchedList ? 'Ẩn' : 'Xem'})
                         </span>
                       </div>
@@ -908,14 +840,14 @@ export default function ExportTab({
                   {/* Matching Status Summary */}
                   <div>
                     {targetIdAnalysis.matchedIds.length > 0 ? (
-                      <span style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
-                        <Check size={14} strokeWidth={3} />
-                        <span>Sẵn sàng xuất {targetIdAnalysis.filteredValidRows.length} dòng thuộc {targetIdAnalysis.matchedProductsCount} sản phẩm!</span>
+                      <span style={{ fontSize: '0.76rem', color: '#059669', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
+                        <Check size={14} strokeWidth={2.5} />
+                        <span>Sẵn sàng xuất {targetIdAnalysis.filteredValidRows.length} dòng ({targetIdAnalysis.matchedProductsCount} sản phẩm)</span>
                       </span>
                     ) : (
-                      <span style={{ fontSize: '0.76rem', color: '#dc2626', fontWeight: 700, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
+                      <span style={{ fontSize: '0.76rem', color: '#dc2626', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '5px' }}>
                         <AlertTriangle size={14} />
-                        <span>Không có ID nào khớp với file PIM đang nạp!</span>
+                        <span>Không có ID nào khớp với file PIM đang nạp</span>
                       </span>
                     )}
                   </div>

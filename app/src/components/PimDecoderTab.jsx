@@ -190,7 +190,7 @@ export default function PimDecoderTab({
         marginBottom: '16px'
       }}>
         <h2 style={{ fontSize: '1.2rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
-          Dịch Option PIM Ra Chữ
+          Dịch Option PIM
         </h2>
 
         <button
@@ -307,18 +307,6 @@ export default function PimDecoderTab({
                 </span>
               )}
             </div>
-
-            {(!optionsMap || optionsMap.size === 0) && (
-              <button
-                type="button"
-                onClick={onLoadSampleMasterData}
-                className="btn btn-primary"
-                style={{ fontSize: '0.76rem', padding: '5px 12px', whiteSpace: 'nowrap' }}
-              >
-                <Sparkles size={13} />
-                <span>Nạp từ điển Option mẫu</span>
-              </button>
-            )}
           </div>
         </div>
       </div>
