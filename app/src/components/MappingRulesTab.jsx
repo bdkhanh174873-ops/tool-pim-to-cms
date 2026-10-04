@@ -258,66 +258,84 @@ export default function MappingRulesTab({
 
               return (
                 <div key={idx} style={{
-                  background: '#fffef5',
-                  border: '1.5px solid #fde68a',
-                  padding: '12px 16px',
-                  borderRadius: '10px',
+                  background: isUsingP2 ? '#f0fdf4' : '#ffffff',
+                  border: isUsingP2 ? '1px solid #86efac' : '1px solid #cbd5e1',
+                  padding: '8px 14px',
+                  borderRadius: '8px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  gap: '16px',
-                  flexWrap: 'wrap',
-                  boxShadow: '0 1px 3px rgba(217,119,6,0.06)'
+                  gap: '12px',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                  transition: 'all 0.15s ease'
                 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                    <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#0f172a' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: '0.85rem', fontWeight: 700, color: '#0f172a' }}>
                       {disc.pimAttributeLabel || disc.pimAttributeCode}
                     </span>
-                    <code style={{ color: '#2563eb', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', background: '#eff6ff', padding: '2px 8px', borderRadius: '4px', border: '1px solid #dbeafe' }}>
+                    <code style={{ color: '#2563eb', fontFamily: 'var(--font-mono)', fontSize: '0.74rem', background: '#eff6ff', padding: '1px 6px', borderRadius: '4px', border: '1px solid #dbeafe' }}>
                       {disc.pimAttributeCode}
                     </code>
-                    <span style={{ fontSize: '0.76rem', color: '#64748b' }}>
-                      • Ngành: <b style={{ color: '#334155' }}>{disc.cmsCategoryId} - {disc.cmsCategoryName}</b>
-                    </span>
-                    {/* Badge trạng thái */}
-                    <span style={{
-                      fontSize: '0.72rem', fontWeight: 700, padding: '3px 9px', borderRadius: '6px',
-                      background: isUsingP2 ? '#d1fae5' : '#dbeafe',
-                      color: isUsingP2 ? '#065f46' : '#1d4ed8',
-                      border: `1px solid ${isUsingP2 ? '#a7f3d0' : '#93c5fd'}`,
-                      display: 'inline-flex', alignItems: 'center', gap: '4px'
-                    }}>
-                      <Check size={12} strokeWidth={3} />
-                      <span>Đang dùng: <b>{isUsingP2 ? `P2 (${p2Code})` : `P1 (${p1Code})`}</b></span>
+                    <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                      • Ngành {disc.cmsCategoryId}{disc.cmsCategoryName ? ` (${disc.cmsCategoryName})` : ''}
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                    <button type="button" onClick={() => handleSelectDiscrepancyCode(disc, p1Code, false)}
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    background: '#f1f5f9',
+                    padding: '3px',
+                    borderRadius: '8px',
+                    border: '1px solid #e2e8f0',
+                    gap: '2px',
+                    flexShrink: 0
+                  }}>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectDiscrepancyCode(disc, p1Code, false)}
                       style={{
-                        fontSize: '0.76rem', padding: '6px 14px', borderRadius: '7px', cursor: 'pointer',
-                        display: 'inline-flex', alignItems: 'center', gap: '5px', transition: 'all 0.15s ease',
-                        ...(!isUsingP2 ? {
-                          background: '#2563eb', color: '#fff', border: '1px solid #1d4ed8', fontWeight: 700,
-                          boxShadow: '0 2px 4px rgba(37,99,235,0.3)'
-                        } : {
-                          background: '#fff', color: '#1e40af', border: '1.5px dashed #93c5fd', fontWeight: 600
-                        })
-                      }}>
-                      {!isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>P1: {p1Code}</span></> : <span>📁 Chọn P1: {p1Code}</span>}
+                        fontSize: '0.74rem',
+                        padding: '5px 13px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        transition: 'all 0.15s ease',
+                        background: !isUsingP2 ? '#2563eb' : 'transparent',
+                        color: !isUsingP2 ? '#ffffff' : '#64748b',
+                        fontWeight: !isUsingP2 ? 700 : 500,
+                        boxShadow: !isUsingP2 ? '0 1px 2px rgba(37,99,235,0.25)' : 'none'
+                      }}
+                      title={`Áp dụng Ưu tiên 1 (Mã CMS: ${p1Code})`}
+                    >
+                      {!isUsingP2 && <Check size={12} strokeWidth={3} />}
+                      <span>Ưu tiên 1 ({p1Code})</span>
                     </button>
-                    <button type="button" onClick={() => handleSelectDiscrepancyCode(disc, p2Code, true)}
+                    <button
+                      type="button"
+                      onClick={() => handleSelectDiscrepancyCode(disc, p2Code, true)}
                       style={{
-                        fontSize: '0.76rem', padding: '6px 14px', borderRadius: '7px', cursor: 'pointer',
-                        display: 'inline-flex', alignItems: 'center', gap: '5px', transition: 'all 0.15s ease',
-                        ...(isUsingP2 ? {
-                          background: '#059669', color: '#fff', border: '1px solid #047857', fontWeight: 700,
-                          boxShadow: '0 2px 4px rgba(5,150,105,0.3)'
-                        } : {
-                          background: '#fff', color: '#065f46', border: '1.5px dashed #86efac', fontWeight: 600
-                        })
-                      }}>
-                      {isUsingP2 ? <><Check size={13} strokeWidth={3} /><span>P2: {p2Code}</span></> : <span>⚡ Chọn P2: {p2Code}</span>}
+                        fontSize: '0.74rem',
+                        padding: '5px 13px',
+                        borderRadius: '6px',
+                        border: 'none',
+                        cursor: 'pointer',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '5px',
+                        transition: 'all 0.15s ease',
+                        background: isUsingP2 ? '#059669' : 'transparent',
+                        color: isUsingP2 ? '#ffffff' : '#64748b',
+                        fontWeight: isUsingP2 ? 700 : 500,
+                        boxShadow: isUsingP2 ? '0 1px 2px rgba(5,150,105,0.25)' : 'none'
+                      }}
+                      title={`Áp dụng Ưu tiên 2 (Mã CMS: ${p2Code})`}
+                    >
+                      {isUsingP2 && <Check size={12} strokeWidth={3} />}
+                      <span>Ưu tiên 2 ({p2Code})</span>
                     </button>
                   </div>
                 </div>

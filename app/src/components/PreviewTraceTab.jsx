@@ -725,9 +725,9 @@ export default function PreviewTraceTab({
 
           {/* Interactive Discrepancy Quick Switcher */}
           {isDiscrepancyBannerExpanded && (
-            <div style={{ marginTop: '14px', paddingTop: '14px', borderTop: '1px solid #dbeafe', display: 'flex', flexDirection: 'column', gap: '10px' }}>
+            <div style={{ marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #dbeafe', display: 'flex', flexDirection: 'column', gap: '8px' }}>
               {transformationResult.discrepancies.map((disc, dIdx) => {
-                const isUsingP2 = disc.appliedSource === 'priority2' || disc.resolvedChoice === 'priority2';
+                const isUsingP2 = disc.appliedSource === 'priority2' || disc.resolvedChoice === 'priority2' || disc.appliedSource === 'priority2_accepted';
                 const p1Code = disc.priority1.cmsPropertyId;
                 const p2Code = disc.priority2.cmsPropertyId;
                 const isFilterAttr = disc.pimAttributeCode.includes('filter');
@@ -735,114 +735,74 @@ export default function PreviewTraceTab({
                 return (
                   <div key={dIdx} style={{
                     background: isUsingP2 ? '#f0fdf4' : '#ffffff',
-                    border: isUsingP2 ? '1.5px solid #86efac' : '1.5px solid #bfdbfe',
-                    padding: '12px 16px',
-                    borderRadius: '10px',
+                    border: isUsingP2 ? '1px solid #86efac' : '1px solid #cbd5e1',
+                    padding: '8px 14px',
+                    borderRadius: '8px',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    gap: '14px',
-                    flexWrap: 'wrap',
-                    boxShadow: isUsingP2 ? '0 1px 3px rgba(16,185,129,0.08)' : '0 1px 3px rgba(37,99,235,0.06)',
-                    transition: 'all 0.2s ease'
+                    gap: '12px',
+                    boxShadow: '0 1px 2px rgba(0,0,0,0.03)',
+                    transition: 'all 0.15s ease'
                   }}>
-                    {/* Left: Attribute Label & Code & Category */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                      <span style={{ fontWeight: 700, fontSize: '0.88rem', color: '#0f172a' }}>
+                    {/* Left: Attribute Details in one clean line */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0, flexWrap: 'wrap' }}>
+                      <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#0f172a' }}>
                         {disc.pimAttributeLabel || disc.priority1?.cmsPropertyName}
                       </span>
-                      <code style={{ fontSize: '0.76rem', color: '#2563eb', background: '#eff6ff', padding: '2px 7px', borderRadius: '4px', fontFamily: 'var(--font-mono)', border: '1px solid #dbeafe' }}>
+                      <code style={{ fontSize: '0.74rem', color: '#2563eb', background: '#eff6ff', padding: '1px 6px', borderRadius: '4px', fontFamily: 'var(--font-mono)', border: '1px solid #dbeafe' }}>
                         {disc.pimAttributeCode}
                       </code>
                       <span style={{
                         fontSize: '0.68rem',
-                        padding: '2px 7px',
-                        borderRadius: '5px',
+                        padding: '1px 6px',
+                        borderRadius: '4px',
                         background: isFilterAttr ? '#ecfdf5' : '#eff6ff',
                         color: isFilterAttr ? '#047857' : '#1d4ed8',
                         border: `1px solid ${isFilterAttr ? '#a7f3d0' : '#bfdbfe'}`,
-                        fontWeight: 700
+                        fontWeight: 600
                       }}>
                         {disc.pimAttributeKind || (isFilterAttr ? 'Filter' : 'TSKT')}
                       </span>
-                      <span style={{ fontSize: '0.74rem', color: '#64748b' }}>
-                        (Ngành {disc.cmsCategoryId}{disc.cmsCategoryName ? ` - ${disc.cmsCategoryName}` : ''})
+                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>
+                        • Ngành {disc.cmsCategoryId}{disc.cmsCategoryName ? ` (${disc.cmsCategoryName})` : ''}
                       </span>
-
-                      {/* Current Active Badge */}
-                      {isUsingP2 ? (
-                        <span style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          padding: '3px 9px',
-                          borderRadius: '6px',
-                          background: '#d1fae5',
-                          color: '#065f46',
-                          border: '1px solid #a7f3d0',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}>
-                          <Check size={12} strokeWidth={3} />
-                          <span>Đang dùng: <b>Ưu tiên 2 (ID: {p2Code})</b></span>
-                        </span>
-                      ) : (
-                        <span style={{
-                          fontSize: '0.72rem',
-                          fontWeight: 700,
-                          padding: '3px 9px',
-                          borderRadius: '6px',
-                          background: '#eff6ff',
-                          color: '#1d4ed8',
-                          border: '1px solid #bfdbfe',
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          gap: '4px'
-                        }}>
-                          <Check size={12} strokeWidth={3} />
-                          <span>Đang dùng: <b>Ưu tiên 1 (ID: {p1Code})</b></span>
-                        </span>
-                      )}
                     </div>
 
-                    {/* Right: Explicit Selection Buttons (Solid Active vs Dashed Switch) */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                    {/* Right: Sleek Segmented Switcher */}
+                    <div style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      background: '#f1f5f9',
+                      padding: '3px',
+                      borderRadius: '8px',
+                      border: '1px solid #e2e8f0',
+                      gap: '2px',
+                      flexShrink: 0
+                    }}>
                       {/* Priority 1 Button */}
                       <button
                         type="button"
                         onClick={() => onResolveDiscrepancy && onResolveDiscrepancy(disc, p1Code, false)}
                         style={{
-                          fontSize: '0.76rem',
-                          padding: '6px 14px',
-                          borderRadius: '7px',
+                          fontSize: '0.74rem',
+                          padding: '5px 13px',
+                          borderRadius: '6px',
+                          border: 'none',
                           cursor: 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '5px',
                           transition: 'all 0.15s ease',
-                          ...(!isUsingP2 ? {
-                            background: '#2563eb',
-                            color: '#ffffff',
-                            border: '1px solid #1d4ed8',
-                            boxShadow: '0 2px 4px rgba(37,99,235,0.3)',
-                            fontWeight: 700
-                          } : {
-                            background: '#ffffff',
-                            color: '#1e40af',
-                            border: '1.5px dashed #93c5fd',
-                            fontWeight: 600
-                          })
+                          background: !isUsingP2 ? '#2563eb' : 'transparent',
+                          color: !isUsingP2 ? '#ffffff' : '#64748b',
+                          fontWeight: !isUsingP2 ? 700 : 500,
+                          boxShadow: !isUsingP2 ? '0 1px 2px rgba(37,99,235,0.25)' : 'none'
                         }}
-                        title={!isUsingP2 ? 'Đang áp dụng Ưu tiên 1' : 'Bấm để dùng Ưu tiên 1'}
+                        title={`Áp dụng Ưu tiên 1 (Mã CMS: ${p1Code})`}
                       >
-                        {!isUsingP2 ? (
-                          <>
-                            <Check size={13} strokeWidth={3} />
-                            <span>Ưu tiên 1 ({p1Code})</span>
-                          </>
-                        ) : (
-                          <span>Ưu tiên 1 ({p1Code})</span>
-                        )}
+                        {!isUsingP2 && <Check size={12} strokeWidth={3} />}
+                        <span>Ưu tiên 1 ({p1Code})</span>
                       </button>
 
                       {/* Priority 2 Button */}
@@ -850,37 +810,24 @@ export default function PreviewTraceTab({
                         type="button"
                         onClick={() => onResolveDiscrepancy && onResolveDiscrepancy(disc, p2Code, true)}
                         style={{
-                          fontSize: '0.76rem',
-                          padding: '6px 14px',
-                          borderRadius: '7px',
+                          fontSize: '0.74rem',
+                          padding: '5px 13px',
+                          borderRadius: '6px',
+                          border: 'none',
                           cursor: 'pointer',
                           display: 'inline-flex',
                           alignItems: 'center',
-                          gap: '6px',
+                          gap: '5px',
                           transition: 'all 0.15s ease',
-                          ...(isUsingP2 ? {
-                            background: '#059669',
-                            color: '#ffffff',
-                            border: '1px solid #047857',
-                            boxShadow: '0 2px 4px rgba(5,150,105,0.3)',
-                            fontWeight: 700
-                          } : {
-                            background: '#ffffff',
-                            color: '#065f46',
-                            border: '1.5px dashed #86efac',
-                            fontWeight: 600
-                          })
+                          background: isUsingP2 ? '#059669' : 'transparent',
+                          color: isUsingP2 ? '#ffffff' : '#64748b',
+                          fontWeight: isUsingP2 ? 700 : 500,
+                          boxShadow: isUsingP2 ? '0 1px 2px rgba(5,150,105,0.25)' : 'none'
                         }}
-                        title={isUsingP2 ? 'Đang áp dụng Ưu tiên 2' : 'Bấm để chọn Ưu tiên 2'}
+                        title={`Áp dụng Ưu tiên 2 (Mã CMS: ${p2Code})`}
                       >
-                        {isUsingP2 ? (
-                          <>
-                            <Check size={13} strokeWidth={3} />
-                            <span>Ưu tiên 2 ({p2Code})</span>
-                          </>
-                        ) : (
-                          <span>⚡ Chọn Ưu tiên 2 ({p2Code})</span>
-                        )}
+                        {isUsingP2 && <Check size={12} strokeWidth={3} />}
+                        <span>Ưu tiên 2 ({p2Code})</span>
                       </button>
                     </div>
                   </div>

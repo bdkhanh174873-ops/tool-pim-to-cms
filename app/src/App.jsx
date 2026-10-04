@@ -851,13 +851,26 @@ export default function App() {
         pimMode = 'text';
       }
 
-      // Ràng buộc bảo vệ Category 57 (Sạc dự phòng): TSKT không được gán mã 500
+      // Ràng buộc bảo vệ Category 57 (Sạc dự phòng):
       let finalChosenPropertyId = String(chosenPropertyId).trim();
       let finalPropertyName = isPriority2 ? (discrepancy.priority2?.cmsPropertyName || '') : (discrepancy.priority1?.cmsPropertyName || '');
-      if (catId === '57' && code === 'battery_capacity_tskt_master' && finalChosenPropertyId === '500') {
-        finalChosenPropertyId = '23370';
-        finalPropertyName = 'Dung lượng pin';
-        pimMode = 'tskt';
+      let finalOriginalP1Id = originalP1Id;
+      let finalOriginalP1Name = originalP1Name;
+
+      if (catId === '57') {
+        if (code === 'battery_capacity_tskt_master') {
+          finalChosenPropertyId = '23370';
+          finalPropertyName = 'Dung lượng pin';
+          finalOriginalP1Id = '23370';
+          finalOriginalP1Name = 'Dung lượng pin';
+          pimMode = 'tskt';
+        } else if (code === 'battery_capacity_filter_master') {
+          finalChosenPropertyId = '500';
+          finalPropertyName = 'Dung lượng pin';
+          finalOriginalP1Id = '500';
+          finalOriginalP1Name = 'Dung lượng pin';
+          pimMode = 'filter';
+        }
       }
 
       const updatedRule = {
@@ -869,8 +882,8 @@ export default function App() {
         pimMode,
         status: 'Confirmed',
         source: isPriority2 ? 'priority2_accepted' : 'priority1_accepted',
-        originalP1Id: originalP1Id,
-        originalP1Name: originalP1Name,
+        originalP1Id: finalOriginalP1Id,
+        originalP1Name: finalOriginalP1Name,
         note: isPriority2 
           ? `Người dùng đã duyệt áp dụng mã ${finalChosenPropertyId} theo Danh mục CMS thông minh (Ưu tiên 2)`
           : `Người dùng đã chọn giữ mã ${finalChosenPropertyId} theo File tham chiếu (Ưu tiên 1)`,

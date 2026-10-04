@@ -303,7 +303,7 @@ export function sanitizeAttributeMappings(mappings = []) {
     // Mã CMS 23352 CHỈ DÙNG CHO CỔNG RA FILTER (exit_gate_filter_master)
     // Mã CMS 21149 CHỈ DÙNG CHO NGUỒN RA TSKT (output_tskt_master)
     if (catId === '57') {
-      if (pimCode === 'battery_capacity_tskt_master' && String(rule.cmsPropertyId).trim() === '500') {
+      if (pimCode === 'battery_capacity_tskt_master') {
         return {
           ...rule,
           cmsPropertyId: '23370',
@@ -324,6 +324,9 @@ export function sanitizeAttributeMappings(mappings = []) {
           cmsPropertyName: 'Dung lượng pin',
           pimMode: 'filter',
           status: 'Confirmed',
+          source: 'file_ref',
+          originalP1Id: '500',
+          originalP1Name: 'Dung lượng pin',
           note: 'Quy tắc chuẩn: Filter Dung lượng pin ngành 57 dùng mã 500',
           updatedAt: new Date().toISOString()
         };

@@ -309,6 +309,21 @@ export function smartFindCmsProperty(cmsCategoryId, pimAttrCode, pimAttrLabel, c
     }
   }
 
+  // 0. NGUYÊN TẮC CHUẨN: Nếu thuộc tính này ĐÃ CÓ trong File Mapping chuẩn (attrMap)
+  // và mã CMS đó tồn tại hợp lệ trong danh mục CMS của ngành hàng này:
+  // ➔ Ưu tiên 2 (Smart Map) xác nhận dùng luôn mã chuẩn này, KHÔNG tự ý gợi ý mã khác để sinh chênh lệch giả.
+  const catRuleKey = `${catIdStr}___${normCode}`;
+  if (attrMap && attrMap.has(catRuleKey)) {
+    const existingRule = attrMap.get(catRuleKey);
+    const existingPropId = String(existingRule.cmsPropertyId || '').trim();
+    if (existingPropId) {
+      const matchInCatalog = catProps.find(p => String(p.propertyId).trim() === existingPropId);
+      if (matchInCatalog) {
+        return determineSmartMode(matchInCatalog, normCode);
+      }
+    }
+  }
+
   // Pre-scan attrMap to detect properties already claimed by opposite mode (Filter vs TSKT)
   const mappedFilterPropIds = new Set();
   const mappedTsktPropIds = new Set();
@@ -550,8 +565,24 @@ export function runMappingTransformation({
       ...existing,
       cmsPropertyId: '500',
       cmsPropertyName: 'Dung lượng pin',
+      originalP1Id: '500',
+      originalP1Name: 'Dung lượng pin',
       pimMode: 'filter',
-      status: 'Confirmed'
+      status: 'Confirmed',
+      source: 'file_ref'
+    });
+  } else {
+    attrMap.set(cat57FilterKey, {
+      cmsCategoryId: '57',
+      cmsCategoryName: 'Sạc dự phòng',
+      pimAttributeCode: 'battery_capacity_filter_master',
+      cmsPropertyId: '500',
+      cmsPropertyName: 'Dung lượng pin',
+      originalP1Id: '500',
+      originalP1Name: 'Dung lượng pin',
+      pimMode: 'filter',
+      status: 'Confirmed',
+      source: 'file_ref'
     });
   }
   const cat57TsktKey = '57___battery_capacity_tskt_master';
@@ -561,8 +592,24 @@ export function runMappingTransformation({
       ...existing,
       cmsPropertyId: '23370',
       cmsPropertyName: 'Dung lượng pin',
+      originalP1Id: '23370',
+      originalP1Name: 'Dung lượng pin',
       pimMode: 'tskt',
-      status: 'Confirmed'
+      status: 'Confirmed',
+      source: 'file_ref'
+    });
+  } else {
+    attrMap.set(cat57TsktKey, {
+      cmsCategoryId: '57',
+      cmsCategoryName: 'Sạc dự phòng',
+      pimAttributeCode: 'battery_capacity_tskt_master',
+      cmsPropertyId: '23370',
+      cmsPropertyName: 'Dung lượng pin',
+      originalP1Id: '23370',
+      originalP1Name: 'Dung lượng pin',
+      pimMode: 'tskt',
+      status: 'Confirmed',
+      source: 'file_ref'
     });
   }
   const cat57ExitGateKey = '57___exit_gate_filter_master';
@@ -794,9 +841,25 @@ export function runMappingTransformation({
       let p1FileId = null;
       let p1FileName = '';
       if (p1Rule) {
-        // originalP1Id is preserved if user previously accepted Priority 2
-        p1FileId = String(p1Rule.originalP1Id || p1Rule.cmsPropertyId).trim();
-        p1FileName = p1Rule.originalP1Name || p1Rule.cmsPropertyName || '';
+        if (p1Rule.source === 'priority2_accepted') {
+          p1FileId = String(p1Rule.originalP1Id || p1Rule.cmsPropertyId).trim();
+          p1FileName = p1Rule.originalP1Name || p1Rule.cmsPropertyName || '';
+        } else {
+          p1FileId = String(p1Rule.cmsPropertyId).trim();
+          p1FileName = p1Rule.cmsPropertyName || '';
+        }
+      }
+
+      // Ràng buộc bất biến tuyệt đối Ngành 57:
+      if (cmsCategoryId === '57') {
+        const normCode = pimAttrCode.toLowerCase();
+        if (normCode.includes('battery_capacity') && (normCode.includes('tskt') || p1Rule?.pimMode === 'tskt')) {
+          p1FileId = '23370';
+          p1FileName = 'Dung lượng pin';
+        } else if (normCode.includes('battery_capacity') && (normCode.includes('filter') || p1Rule?.pimMode === 'filter')) {
+          p1FileId = '500';
+          p1FileName = 'Dung lượng pin';
+        }
       }
 
       let p2CmsId = null;
