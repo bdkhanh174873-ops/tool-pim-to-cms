@@ -13,6 +13,8 @@ import {
   Check
 } from 'lucide-react';
 import { exportSettingsToJSON } from '../services/storageService';
+import dmxLogo from '../assets/dmx-logo.png';
+import dmxIcon from '../assets/dmx-icon.png';
 
 export default function Sidebar({
   activeTab,
@@ -95,7 +97,7 @@ export default function Sidebar({
             <>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <img 
-                  src="/dmx-logo.png" 
+                  src={dmxLogo} 
                   alt="DMX Logo" 
                   style={{ 
                     height: '24px', 
@@ -185,7 +187,7 @@ export default function Sidebar({
               title="Nhấp để mở rộng thanh bên"
             >
               <img 
-                src="/dmx-icon.png" 
+                src={dmxIcon} 
                 alt="DMX Icon" 
                 style={{ 
                   width: '28px', 
