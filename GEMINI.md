@@ -44,9 +44,11 @@ Mỗi cột thuộc tính PIM trong từng ngành hàng được đối soát th
 
 ## 3. QUY TẮC XỬ LÝ & BÓC TÁCH GIÁ TRỊ (VALUE RESOLUTION)
 
-1. **Thuộc tính Dạng Text (`pimMode === 'text'`)**:
-   - Áp dụng cho: Tên model, kích thước (`size_`), khối lượng (`mass_`), dòng sản phẩm...
-   - Giá trị được giữ nguyên chuỗi văn bản gốc, không bắt buộc phải có `VALUEID` trên CMS.
+1. **Thuộc tính Dạng Text (`pimMode === 'text'` hoặc Thuộc tính CMS có VALUEID & VALUE trống)**:
+   - Áp dụng cho:
+     - Các cột cấu hình text (Tên model, kích thước `size_`, khối lượng `mass_`, dòng sản phẩm...).
+     - **Thuộc tính CMS dạng nhập text**: Trong file danh mục thuộc tính & giá trị CMS (`file-tt-gt.xlsx` / `cmsCatalog`), các cột `VALUEID` và `VALUE` bị trống (hoặc `values.length === 0`). Trên hệ thống CMS, các thuộc tính này là ô nhập text tự do, không có danh mục option cố định nên khi CMS đổ dữ liệu ra file thì cột `VALUEID`/`VALUE` không có dữ liệu.
+   - **Xử lý khi xuất import**: Lấy trực tiếp chuỗi văn bản từ PIM truyền thẳng vào file import sản phẩm (`import_sp_cms.xlsx`) tại cột `PROPVALUEID` và `PROPVALUETEXT`, tuyệt đối KHÔNG coi là thiếu mã VALUEID, KHÔNG tạo đề xuất tạo mới (Proposals) và KHÔNG giữ lại ở Hold Rows.
 2. **Thuộc tính Dạng Bộ Lọc (`pimMode === 'filter'`)**:
    - Dữ liệu PIM thường lưu dưới dạng mảng JSON (ví dụ: `["140", "6"]`) hoặc mã số đơn.
    - Bắt buộc phải giải mã qua `option_pim.xlsx` để lấy chuỗi văn bản (ví dụ: mã `140` ➔ `10.000 mAh`).

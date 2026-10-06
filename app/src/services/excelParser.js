@@ -337,11 +337,12 @@ export function parseCMSCatalogFile(worksheet) {
     const valId = valIdIdx !== -1 && row[valIdIdx] !== null && row[valIdIdx] !== undefined ? String(row[valIdIdx]).trim() : '';
     const rawVal = valIdx !== -1 && row[valIdx] !== null && row[valIdx] !== undefined ? String(row[valIdx]).trim() : '';
 
-    if (valId || rawVal) {
+    const isEmptyVal = (!valId || valId === '(Trống)') && (!rawVal || rawVal === '(Trống)');
+    if (!isEmptyVal) {
       const propObj = properties.get(propKey);
       propObj.values.push({ valId, valName: rawVal });
 
-      if (rawVal) {
+      if (rawVal && rawVal !== '(Trống)') {
         const valLookupKey = `${catId}___${propId}___${normalizeText(rawVal)}`;
         if (!valueLookup.has(valLookupKey)) {
           valueLookup.set(valLookupKey, []);
@@ -360,6 +361,27 @@ export function parseCMSCatalogFile(worksheet) {
       valueName: rawVal
     });
   }
+
+  // Nhận diện thuộc tính dạng nhập text trên CMS:
+  // Nếu cột VALUEID và VALUE trong file CMS bị trống (không có giá trị nào),
+  // thuộc tính đó trên CMS là dạng nhập text (propertyType = 0, isText = true).
+  for (const [, propObj] of properties.entries()) {
+    if (!propObj.values || propObj.values.length === 0) {
+      propObj.isText = true;
+      if (propObj.propertyType === null || propObj.propertyType === undefined) {
+        propObj.propertyType = 0; // 0: text
+      }
+    }
+  }
+
+  // Đồng bộ lại propertyType trong rawTableRows cho các thuộc tính text này
+  rawTableRows.forEach(r => {
+    const pKey = `${r.categoryId}___${r.propertyId}`;
+    const pObj = properties.get(pKey);
+    if (pObj && pObj.isText && (r.propertyType === null || r.propertyType === undefined)) {
+      r.propertyType = 0;
+    }
+  });
 
   return {
     categories: Array.from(categories.entries()).map(([id, name]) => ({ id, name })),
@@ -595,6 +617,24 @@ export function rebuildCMSCatalogFromRows(rawTableRows) {
       }
     }
   }
+
+  // Nhận diện thuộc tính dạng nhập text trên CMS:
+  for (const [, propObj] of properties.entries()) {
+    if (!propObj.values || propObj.values.length === 0) {
+      propObj.isText = true;
+      if (propObj.propertyType === null || propObj.propertyType === undefined) {
+        propObj.propertyType = 0; // 0: text
+      }
+    }
+  }
+
+  rawTableRows.forEach(r => {
+    const pKey = `${r.categoryId}___${r.propertyId}`;
+    const pObj = properties.get(pKey);
+    if (pObj && pObj.isText && (r.propertyType === null || r.propertyType === undefined)) {
+      r.propertyType = 0;
+    }
+  });
 
   return {
     categories: Array.from(categories.entries()).map(([id, name]) => ({ id, name })),

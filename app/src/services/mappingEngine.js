@@ -228,10 +228,44 @@ export function findSmartCmsValueSuggestion(textToLookup, availableCmsValues, is
   return bestMatch;
 }
 
+/**
+ * Kiểm tra xem một thuộc tính trên CMS có phải là dạng nhập text hay không:
+ * - Trong file CMS Catalog, các cột VALUEID và VALUE bị trống (không có giá trị mẫu nào được đổ ra từ CMS)
+ * - Hoặc propertyType === 0
+ * - Hoặc propObj.isText === true
+ */
+export function isCmsPropertyTextOnly(cmsCatalog, categoryId, propertyId) {
+  if (!cmsCatalog) return false;
+  const propKey = `${String(categoryId).trim()}___${String(propertyId).trim()}`;
+  if (cmsCatalog.properties && cmsCatalog.properties.has(propKey)) {
+    const propObj = cmsCatalog.properties.get(propKey);
+    if (propObj.propertyType === 0 || propObj.isText === true) return true;
+    if (!propObj.values || propObj.values.length === 0) return true;
+    return false;
+  }
+  if (cmsCatalog.rawTableRows && cmsCatalog.rawTableRows.length > 0) {
+    const catIdStr = String(categoryId).trim();
+    const propIdStr = String(propertyId).trim();
+    const matchingRows = cmsCatalog.rawTableRows.filter(
+      r => String(r.categoryId).trim() === catIdStr && String(r.propertyId).trim() === propIdStr
+    );
+    if (matchingRows.length > 0) {
+      const hasAnyValue = matchingRows.some(r => {
+        const vId = r.valueId !== null && r.valueId !== undefined ? String(r.valueId).trim() : '';
+        const vName = r.valueName !== null && r.valueName !== undefined ? String(r.valueName).trim() : '';
+        return (vId !== '' && vId !== '(Trống)') || (vName !== '' && vName !== '(Trống)');
+      });
+      return !hasAnyValue;
+    }
+  }
+  return false;
+}
+
 function determineSmartMode(propObj, normCode) {
   let pimMode = 'tskt';
+  const isCmsText = propObj.propertyType === 0 || propObj.isText === true || (!propObj.values || propObj.values.length === 0);
   if (
-    propObj.propertyType === 0 || 
+    isCmsText || 
     normCode.includes('size_') || 
     normCode.includes('mass_') || 
     normCode.includes('product_line') || 
@@ -244,7 +278,7 @@ function determineSmartMode(propObj, normCode) {
   return {
     propertyId: String(propObj.propertyId).trim(),
     propertyName: propObj.propertyName || '',
-    propertyType: propObj.propertyType,
+    propertyType: isCmsText ? 0 : propObj.propertyType,
     pimMode
   };
 }
@@ -1020,12 +1054,32 @@ export function runMappingTransformation({
       const propCatalogKey = `${cmsCategoryId}___${cmsPropertyId}`;
       const catalogPropObj = cmsCatalog.properties ? cmsCatalog.properties.get(propCatalogKey) : null;
 
-      // Handle Text properties (PropertyType 0 or configured as text)
-      const isTextProperty = pimMode === 'text' || (catalogPropObj && catalogPropObj.propertyType === 0);
+      // Handle Text properties:
+      // 1. Cấu hình pimMode === 'text'
+      // 2. Thuộc tính trên CMS là dạng nhập text (cột VALUEID & VALUE trong CMS Catalog bị trống, hoặc propertyType === 0)
+      const isCmsText = isCmsPropertyTextOnly(cmsCatalog, cmsCategoryId, cmsPropertyId);
+      const isTextProperty = pimMode === 'text' || isCmsText;
 
       if (isTextProperty) {
-        // User rule: write raw text directly into PROPVALUEID and PROPVALUETEXT
-        const textVal = String(rawValue).trim();
+        // Thuộc tính dạng nhập text: Lấy trực tiếp giá trị từ PIM pass vào file import thay vì tạo mới
+        let textVal = String(rawValue).trim();
+        if (pimMode === 'filter') {
+          try {
+            const parsed = JSON.parse(textVal);
+            const codes = Array.isArray(parsed) ? parsed : [textVal];
+            const decodedCodes = codes.map(c => {
+              const optKey = `${pimAttrCode.toLowerCase()}___${String(c).trim()}`;
+              const optObj = pimOptions?.get ? pimOptions.get(optKey) : null;
+              return (optObj && optObj.optionValue) ? optObj.optionValue.trim() : String(c).trim();
+            });
+            textVal = decodedCodes.join(', ');
+          } catch {
+            const optKey = `${pimAttrCode.toLowerCase()}___${textVal}`;
+            const optObj = pimOptions?.get ? pimOptions.get(optKey) : null;
+            if (optObj && optObj.optionValue) textVal = optObj.optionValue.trim();
+          }
+        }
+
         if (textVal) {
           validImportRows.push({
             PRODUCTID: cms_product_id,
