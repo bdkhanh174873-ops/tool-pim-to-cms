@@ -111,7 +111,16 @@ Mỗi cột thuộc tính PIM trong từng ngành hàng được đối soát th
 
 ## 6. HƯỚNG DẪN DÀNH CHO CÁC PHIÊN PHÁT TRIỂN / NÂNG CẤP TIẾP THEO
 
+- **Ghi nhớ toàn diện & Không hỏi lại**: Tất cả các quy tắc đã chốt trong tài liệu này (xử lý thuộc tính text khi VALUEID/VALUE trống, phân tách mã 500/23370 ngành 57, thứ tự ưu tiên 1 > 2, định danh `model_id_cms`, khử trùng lặp biến thể, đường dẫn assets GitHub Pages...) là **bất biến**. Hệ thống và các phiên AI tiếp theo PHẢI tự động tuân thủ nghiêm ngặt, tuyệt đối không hỏi lại người dùng những điều đã thống nhất.
 - **Trước khi chỉnh sửa code**: Luôn đối chiếu với tài liệu này để đảm bảo không làm gãy luồng mapping.
 - **Khi thêm tính năng mới**:
   - Không viết logic tính toán/mapping trực tiếp vào component React. Hãy viết hàm thuần túy (pure function) trong thư mục `services/`.
   - Luôn chạy `npm run build` để kiểm tra toàn vẹn mã nguồn và bundle trước khi bàn giao.
+
+---
+
+## 7. QUY TẮC TÀI NGUYÊN TĨNH & DEPLOY GITHUB PAGES (ASSETS & DEPLOYMENT)
+
+- **Xử lý ảnh & logo**: Toàn bộ ảnh, logo, icon hiển thị trong giao diện (như `dmx-logo.png`, `dmx-icon.png`) PHẢI được lưu trong `app/src/assets/` và import trực tiếp qua JavaScript (`import logo from '../assets/...'`) để Vite đóng gói hash và tạo đường dẫn tương đối (`new URL(...)`).
+- **Tuyệt đối không dùng đường dẫn tuyệt đối dạng root**: Không viết `<img src="/dmx-logo.png" />` trong JSX vì khi deploy lên GitHub Pages (`https://username.github.io/repo-name/`), trình duyệt sẽ tìm ở domain gốc dẫn đến lỗi 404 vỡ ảnh.
+
