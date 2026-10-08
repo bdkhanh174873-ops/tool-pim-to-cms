@@ -64,12 +64,16 @@ Mỗi cột thuộc tính PIM trong từng ngành hàng được đối soát th
        - **TUYỆT ĐỐI KHÔNG TÁCH NHIỀU DÒNG**: Trên CMS, nếu tách nhiều dòng có cùng `PRODUCTID` và `PROPERTYID`, dòng import sau sẽ ghi đè làm mất dòng trước. Toàn bộ các giá trị của một thuộc tính phải nằm trên **1 dòng duy nhất**.
        - **ĐỊNH DẠNG BẮT BUỘC BỌC DẤU PHẨY TRƯỚC VÀ SAU**: Danh sách `VALUEID` phải có dấu phẩy ở cả đầu và cuối, ví dụ: `,123,` hoặc `,123,124,125,`.
        - **Lưu ý đặc biệt**: Dù trên file PIM người dùng chỉ chọn 1 giá trị (vd `123`), nhưng nếu trên CMS thuộc tính đó là `PROPERTYTYPE = 2` thì vẫn BẮT BUỘC xuất ra dạng `,123,`.
-5. **Thuộc Tính Hai Vai Trò (Dual-Role Properties) & Quy Tắc Bất Biến Ngành 57**:
-   - Nếu 1 mã thuộc tính CMS vừa được dùng làm TSKT vừa được dùng làm Bộ lọc, hệ thống tự động nhận diện và gắn cờ `isDualRole` để đối soát đầy đủ cả hai vai trò (áp dụng khi có 2 cột PIM riêng biệt thực sự trỏ về cùng mã CMS).
-   - **QUY TẮC BẤT DI BẤT DỊCH (NGÀNH 57 - SẠC DỰ PHÒNG)**:
-     - **Mã CMS `500` (`Dung lượng pin`) CHỈ DÙNG CHO FILTER** (ánh xạ từ `battery_capacity_filter_master`). Tuyệt đối không được báo là vừa TSKT vừa Filter, và không được dùng làm TSKT.
-     - **Mã CMS `23370` (`Dung lượng pin`) CHỈ DÙNG CHO TSKT** (ánh xạ từ `battery_capacity_tskt_master`).
-     - Hai mã này trên CMS là hai thuộc tính riêng biệt (500 chứa các giá trị filter dạng chữ `20.000 mAh`, còn 23370 chứa giá trị số `20000`). Smart Auto-Mapping và hệ thống chuyển đổi TUYỆT ĐỐI không được đánh tráo hay đề xuất mã 500 cho TSKT.
+5. **Quy Tắc Phân Tách Tuyệt Đối Giữa Thuộc Tính Bộ Lọc (Filter) và Thông Số Kỹ Thuật (TSKT) Áp Dụng Toàn Hệ Thống (QUY TẮC PHỔ QUÁT CHO TẤT CẢ NGÀNH HÀNG)**:
+   - **Bản chất hệ thống CMS**: Ở mọi ngành hàng (Điện thoại, Laptop, Tablet, Phụ kiện, Sạc dự phòng, Tai nghe, Đồng hồ...), các thuộc tính cùng tên nhưng phục vụ 2 mục đích khác nhau (1 mã dùng cho Bộ lọc tìm kiếm trên Web và 1 mã dùng cho Bảng thông số kỹ thuật chi tiết) luôn là **hai `PROPERTYID` hoàn toàn riêng biệt trên CMS**.
+   - **QUY TẮC BẤT DI BẤT DỊCH TOÀN HỆ THỐNG**:
+     - Cột PIM dạng Bộ lọc (`filter_master`, `_filter`, `pimMode === 'filter'`) **BẮT BUỘC ÁNH XẠ ĐÚNG MÃ CMS FILTER** (chứa danh mục text hiển thị bộ lọc, vd `10.000 mAh`, `65 W`, `OLED`...).
+     - Cột PIM dạng TSKT (`tskt_master`, `_tskt`, `pimMode === 'tskt'`) **BẮT BUỘC ÁNH XẠ ĐÚNG MÃ CMS TSKT** (chứa thông số kỹ thuật/số liệu, vd `10000`, `65`...).
+     - Smart Auto-Mapping và hệ thống chuyển đổi **TUYỆT ĐỐI KHÔNG ĐƯỢC ĐÁNH TRÁO** mã Filter sang TSKT hoặc ngược lại ở bất kỳ ngành hàng nào.
+     - **Ví dụ điển hình (Ngành 57 - Sạc dự phòng)**:
+       - Mã CMS `500` (`Dung lượng pin`) **CHỈ DÙNG CHO FILTER** (từ `battery_capacity_filter_master`).
+       - Mã CMS `23370` (`Dung lượng pin`) **CHỈ DÙNG CHO TSKT** (từ `battery_capacity_tskt_master`).
+       - Tuyệt đối không hoán đổi hoặc gộp hai mã này.
 6. **Thuật Toán AI Smart Value Matcher (Gợi Ý Khớp Thông Minh Giá Trị Filter & TSKT)**:
    - Nhận diện các thuộc tính Bộ lọc qua mã `filter_master`, `_filter`, hoặc `pimMode === 'filter'`.
    - Khi giá trị PIM không khớp chính xác với CMS Catalog do khác cách biểu diễn (vd: `20000mAh` vs `20.000 mAh` vs `20000`, `Type-C` vs `Type C`, `65W` vs `65 W`):
@@ -140,7 +144,7 @@ Mỗi cột thuộc tính PIM trong từng ngành hàng được đối soát th
 | :---: | :--- | :--- | :---: |
 | **09/10/2026** | **Chuẩn hóa xuất theo `PROPERTYTYPE` (0, 1, 2)**:<br>• `PROPERTYTYPE = 0` ➔ Nhập text thuần.<br>• `PROPERTYTYPE = 1` ➔ Xuất mã số đơn (vd: `123`).<br>• `PROPERTYTYPE = 2` ➔ **Nằm trên 1 dòng duy nhất** và **bắt buộc bọc dấu phẩy trước/sau** (vd: `,123,` hoặc `,123,124,125,`), dù PIM chỉ chọn 1 giá trị vẫn phải có dấu phẩy. | Trên CMS, nếu tách nhiều dòng có cùng ID, dòng sau sẽ ghi đè đè mất dòng trước. Hệ thống chỉ căn cứ theo `PROPERTYTYPE` của CMS, không phụ thuộc vào số lượng giá trị trên PIM. | **BẤT BIẾN** |
 | **08/10/2026** | **Tự động nhận diện trường Text khi VALUEID/VALUE trống**: Nếu trong Catalog CMS thuộc tính không có danh mục option (`values.length === 0`), coi là Text tự do, không bắt VALUEID, không Hold rows. | Tránh báo lỗi giả cho các trường văn bản mở như tên model, kích thước, ghi chú kỹ thuật. | **BẤT BIẾN** |
-| **07/10/2026** | **Phân tách mã 500 & 23370 (Ngành 57 - Sạc dự phòng)**:<br>• Mã CMS `500` CHỈ DÙNG CHO FILTER (`10.000 mAh`).<br>• Mã CMS `23370` CHỈ DÙNG CHO TSKT (`10000`). | Hai mã này trên CMS là hai thuộc tính riêng biệt, tuyệt đối không được đánh tráo hay gộp làm Dual-Role. | **BẤT BIẾN** |
+| **07/10/2026** | **Phân tách tuyệt đối giữa mã Filter và mã TSKT (Áp dụng TOÀN BỘ NGÀNH HÀNG)**:<br>• Cột PIM dạng Bộ lọc (`filter_master`/`_filter`) CHỈ ánh xạ sang mã CMS Filter.<br>• Cột PIM dạng TSKT (`tskt_master`/`_tskt`) CHỈ ánh xạ sang mã CMS TSKT.<br>• Tuyệt đối không đánh tráo hay đề xuất mã Filter cho TSKT và ngược lại trên bất kỳ ngành nào (Điện thoại, Laptop, Sạc dự phòng, Tai nghe...). | Tránh sai lệch cấu trúc dữ liệu CMS (dữ liệu bộ lọc web khác với dữ liệu bảng thông số kỹ thuật). Ngành 57 là ví dụ điển hình (500: Filter vs 23370: TSKT). | **BẤT BIẾN TOÀN HỆ THỐNG** |
 | **06/10/2026** | **Cố định thứ tự ưu tiên (Priority 1 > Priority 2)**:<br>Ưu tiên 1 (Quy tắc chuẩn) luôn chạy mặc định; Ưu tiên 2 (Smart Suggestion) chỉ chạy gợi ý và không được chiếm dụng mã CMS của Ưu tiên 1. | Đảm bảo tính toàn vẹn của dữ liệu chuẩn đã được phê duyệt từ trước. | **BẤT BIẾN** |
 | **06/10/2026** | **Định danh bằng `model_id_cms` & Khử trùng lặp biến thể**: Mỗi model chỉ giữ 1 dòng đại diện khi xuất CMS import. | Tránh tạo rác trên CMS khi một model PIM có nhiều dòng SKU con khác màu sắc. | **BẤT BIẾN** |
 
