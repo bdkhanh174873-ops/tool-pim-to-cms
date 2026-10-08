@@ -148,4 +148,10 @@ Mỗi cột thuộc tính PIM trong từng ngành hàng được đối soát th
 | **06/10/2026** | **Cố định thứ tự ưu tiên (Priority 1 > Priority 2)**:<br>Ưu tiên 1 (Quy tắc chuẩn) luôn chạy mặc định; Ưu tiên 2 (Smart Suggestion) chỉ chạy gợi ý và không được chiếm dụng mã CMS của Ưu tiên 1. | Đảm bảo tính toàn vẹn của dữ liệu chuẩn đã được phê duyệt từ trước. | **BẤT BIẾN** |
 | **06/10/2026** | **Định danh bằng `model_id_cms` & Khử trùng lặp biến thể**: Mỗi model chỉ giữ 1 dòng đại diện khi xuất CMS import. | Tránh tạo rác trên CMS khi một model PIM có nhiều dòng SKU con khác màu sắc. | **BẤT BIẾN** |
 
+---
+
+## 9. QUY CÁCH GIAO TIẾP & XƯNG HÔ (COMMUNICATION PREFERENCE)
+- Luôn xưng hô với người dùng là **anh Khanh** trong mọi câu trả lời và trao đổi.
+
+
 
