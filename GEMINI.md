@@ -130,3 +130,18 @@ Mỗi cột thuộc tính PIM trong từng ngành hàng được đối soát th
 - **Xử lý ảnh & logo**: Toàn bộ ảnh, logo, icon hiển thị trong giao diện (như `dmx-logo.png`, `dmx-icon.png`) PHẢI được lưu trong `app/src/assets/` và import trực tiếp qua JavaScript (`import logo from '../assets/...'`) để Vite đóng gói hash và tạo đường dẫn tương đối (`new URL(...)`).
 - **Tuyệt đối không dùng đường dẫn tuyệt đối dạng root**: Không viết `<img src="/dmx-logo.png" />` trong JSX vì khi deploy lên GitHub Pages (`https://username.github.io/repo-name/`), trình duyệt sẽ tìm ở domain gốc dẫn đến lỗi 404 vỡ ảnh.
 
+---
+
+## 8. NHẬT KÝ QUY TẮC & LỊCH SỬ THAY ĐỔI (DECISION & RULE CHANGELOG)
+
+> *Bảng theo dõi tất cả các quy tắc nghiệp vụ theo thời gian để đảm bảo mọi tính năng mới tuyệt đối KHÔNG làm hồi quy (regression) hoặc phá vỡ các logic đã chốt.*
+
+| Thời Gian | Quy Tắc & Quyết Định Nghiệp Vụ | Ngữ Cảnh & Lý Do | Trạng Thái |
+| :---: | :--- | :--- | :---: |
+| **09/10/2026** | **Chuẩn hóa xuất theo `PROPERTYTYPE` (0, 1, 2)**:<br>• `PROPERTYTYPE = 0` ➔ Nhập text thuần.<br>• `PROPERTYTYPE = 1` ➔ Xuất mã số đơn (vd: `123`).<br>• `PROPERTYTYPE = 2` ➔ **Nằm trên 1 dòng duy nhất** và **bắt buộc bọc dấu phẩy trước/sau** (vd: `,123,` hoặc `,123,124,125,`), dù PIM chỉ chọn 1 giá trị vẫn phải có dấu phẩy. | Trên CMS, nếu tách nhiều dòng có cùng ID, dòng sau sẽ ghi đè đè mất dòng trước. Hệ thống chỉ căn cứ theo `PROPERTYTYPE` của CMS, không phụ thuộc vào số lượng giá trị trên PIM. | **BẤT BIẾN** |
+| **08/10/2026** | **Tự động nhận diện trường Text khi VALUEID/VALUE trống**: Nếu trong Catalog CMS thuộc tính không có danh mục option (`values.length === 0`), coi là Text tự do, không bắt VALUEID, không Hold rows. | Tránh báo lỗi giả cho các trường văn bản mở như tên model, kích thước, ghi chú kỹ thuật. | **BẤT BIẾN** |
+| **07/10/2026** | **Phân tách mã 500 & 23370 (Ngành 57 - Sạc dự phòng)**:<br>• Mã CMS `500` CHỈ DÙNG CHO FILTER (`10.000 mAh`).<br>• Mã CMS `23370` CHỈ DÙNG CHO TSKT (`10000`). | Hai mã này trên CMS là hai thuộc tính riêng biệt, tuyệt đối không được đánh tráo hay gộp làm Dual-Role. | **BẤT BIẾN** |
+| **06/10/2026** | **Cố định thứ tự ưu tiên (Priority 1 > Priority 2)**:<br>Ưu tiên 1 (Quy tắc chuẩn) luôn chạy mặc định; Ưu tiên 2 (Smart Suggestion) chỉ chạy gợi ý và không được chiếm dụng mã CMS của Ưu tiên 1. | Đảm bảo tính toàn vẹn của dữ liệu chuẩn đã được phê duyệt từ trước. | **BẤT BIẾN** |
+| **06/10/2026** | **Định danh bằng `model_id_cms` & Khử trùng lặp biến thể**: Mỗi model chỉ giữ 1 dòng đại diện khi xuất CMS import. | Tránh tạo rác trên CMS khi một model PIM có nhiều dòng SKU con khác màu sắc. | **BẤT BIẾN** |
+
+
