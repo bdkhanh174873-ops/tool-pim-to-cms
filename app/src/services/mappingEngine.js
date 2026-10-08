@@ -1315,20 +1315,29 @@ export function runMappingTransformation({
         }
       }
 
+      // Xác định loại thuộc tính CMS (0: text, 1: single, 2: multi)
+      const propType = (catalogPropObj && catalogPropObj.propertyType !== null && catalogPropObj.propertyType !== undefined)
+        ? catalogPropObj.propertyType
+        : (effectiveRule && effectiveRule.propertyType !== null && effectiveRule.propertyType !== undefined
+            ? effectiveRule.propertyType
+            : (uniqueValIds.length > 1 ? 2 : 1));
+
       // 1. Format PROPVALUEID (Chế độ 1 - Mặc định: Dạng mã số ID)
+      // - Chọn nhiều (PROPERTYTYPE = 2): Bắt buộc bọc dấu phẩy trước & sau, vd: ,123, hoặc ,123,124,125,
+      // - Chọn 1 (PROPERTYTYPE = 1): Mã số đơn, vd: 123
       let finalPropValueId = '';
-      if (uniqueValIds.length === 1) {
-        finalPropValueId = uniqueValIds[0];
-      } else {
+      if (propType === 2) {
         finalPropValueId = `,${uniqueValIds.join(',')},`;
+      } else {
+        finalPropValueId = uniqueValIds[0];
       }
 
       // 2. Format PROPVALUETEXT (Chế độ 2: Dạng text tương ứng)
       let finalPropValueText = '';
-      if (uniqueValTexts.length === 1) {
-        finalPropValueText = uniqueValTexts[0];
-      } else {
+      if (propType === 2) {
         finalPropValueText = `,${uniqueValTexts.join(',')},`;
+      } else {
+        finalPropValueText = uniqueValTexts[0];
       }
 
       validImportRows.push({

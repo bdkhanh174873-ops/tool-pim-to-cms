@@ -56,8 +56,14 @@ Mỗi cột thuộc tính PIM trong từng ngành hàng được đối soát th
 3. **Thuộc tính Dạng Thông Số Kỹ Thuật (`pimMode === 'tskt'`)**:
    - Phân tách đa giá trị bằng dấu gạch đứng `|`.
    - Tra cứu trực tiếp text với danh sách giá trị của thuộc tính đó trong Catalog CMS.
-4. **Xử lý Đa Giá Trị (Multi-value Expansion)**:
-   - Nếu một thuộc tính có nhiều giá trị (ví dụ: Cổng sạc có cả `Type-C` và `Lightning`), hệ thống tự động tách thành **nhiều dòng riêng biệt** trong file xuất CMS với cùng `PRODUCTID` và `PROPERTYID`.
+4. **Xử Lý Định Dạng Xuất Theo `PROPERTYTYPE` (QUY TẮC BẤT DI BẤT DỊCH)**:
+   - **Căn cứ hệ thống**: Luôn đối chiếu theo kiểu thuộc tính trên CMS (`PROPERTYTYPE` trong `cmsCatalog`), tuyệt đối không căn cứ vào số lượng giá trị trên PIM:
+     - **`PROPERTYTYPE = 0` (Nhập Text)**: Điền trực tiếp chuỗi văn bản tự do.
+     - **`PROPERTYTYPE = 1` (Chọn 1 / Single-select)**: Xuất mã số đơn thuần, ví dụ: `123`.
+     - **`PROPERTYTYPE = 2` (Chọn nhiều / Multi-select)**:
+       - **TUYỆT ĐỐI KHÔNG TÁCH NHIỀU DÒNG**: Trên CMS, nếu tách nhiều dòng có cùng `PRODUCTID` và `PROPERTYID`, dòng import sau sẽ ghi đè làm mất dòng trước. Toàn bộ các giá trị của một thuộc tính phải nằm trên **1 dòng duy nhất**.
+       - **ĐỊNH DẠNG BẮT BUỘC BỌC DẤU PHẨY TRƯỚC VÀ SAU**: Danh sách `VALUEID` phải có dấu phẩy ở cả đầu và cuối, ví dụ: `,123,` hoặc `,123,124,125,`.
+       - **Lưu ý đặc biệt**: Dù trên file PIM người dùng chỉ chọn 1 giá trị (vd `123`), nhưng nếu trên CMS thuộc tính đó là `PROPERTYTYPE = 2` thì vẫn BẮT BUỘC xuất ra dạng `,123,`.
 5. **Thuộc Tính Hai Vai Trò (Dual-Role Properties) & Quy Tắc Bất Biến Ngành 57**:
    - Nếu 1 mã thuộc tính CMS vừa được dùng làm TSKT vừa được dùng làm Bộ lọc, hệ thống tự động nhận diện và gắn cờ `isDualRole` để đối soát đầy đủ cả hai vai trò (áp dụng khi có 2 cột PIM riêng biệt thực sự trỏ về cùng mã CMS).
    - **QUY TẮC BẤT DI BẤT DỊCH (NGÀNH 57 - SẠC DỰ PHÒNG)**:
