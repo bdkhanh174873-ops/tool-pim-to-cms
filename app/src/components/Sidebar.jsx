@@ -556,11 +556,11 @@ export default function Sidebar({
               justifyContent: 'center',
               flexShrink: 0
             }}>
-              AD
+              BDK
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
               <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#0f172a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                Admin
+                Admin BDK
               </div>
               <div style={{ fontSize: '0.7rem', color: '#64748b', marginTop: '1px' }}>
                 DMX by MWG
@@ -582,7 +582,7 @@ export default function Sidebar({
               alignItems: 'center',
               justifyContent: 'center'
             }}>
-              AD
+              BDK
             </div>
           </div>
         )}
